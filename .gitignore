@@ -1,0 +1,8 @@
+# Exclude specific config files
+development/wifi_communication/WIFI_ESP_32/ESP32/config.h
+development/wifi_communication/WIFI_ESP 12F (not working)/ESP12F/config.h
+
+# Exclude specific images in docs
+docs/DynDNS.jpg
+docs/Ip local static.jpg
+docs/NAT.jpg
