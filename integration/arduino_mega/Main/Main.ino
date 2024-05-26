@@ -1,7 +1,7 @@
 /*
  * main.cpp
  * This file serves as the main entry point for the Arduino project.
- * It initializes and controls multiple actuators and sensors, allowing for flexible operation and data collection.
+ * It initializes and controls multiple actuators and sensors, allowing for flexible operation and data collection. Data are send to ESP32 via serial communication.
  *
  * Physical modules used:
  * - Arduino Mega 2560
@@ -18,6 +18,7 @@
  * - Gravity: Analog Dissolved Oxygen Sensor / Meter Kit for Arduino
  */
 
+#include <SoftwareSerial.h>
 #include <Arduino.h>
 #include "DCPump.h"
 #include "StirringMotor.h"
@@ -26,6 +27,12 @@
 #include "PHSensor.h"
 #include "TurbiditySensor.h"
 #include "OxygenSensor.h"
+
+// Define the pins for SoftwareSerial
+const int rxPin = 11;
+const int txPin = 12;
+
+SoftwareSerial espSerial(rxPin, txPin); // RX, TX
 
 // Create pump objects with specific pin assignments and minimum PWM values
 DCPump airPump(5, 6, 10, "Air Pump"); // Air pump: PWM pin 5, Relay pin 6
@@ -46,6 +53,8 @@ OxygenSensor oxygenSensor(A3, A4);
 
 void setup() {
     Serial.begin(115200); // Initialize serial communication at 115200 baud rate
+    espSerial.begin(115200);
+
     Serial.println("Setup started");
 
     // Initialize sensors and actuators
@@ -92,6 +101,7 @@ void loop() {
     basePump.control(false, 0);  // Turn the base pump off
     delay(2000);                 // Off for 2 seconds
 */
+
     // Read and print temperature sensor value
     float temperature = tempSensor.readValue();
     Serial.print("Temperature: ");
@@ -115,5 +125,15 @@ void loop() {
     Serial.println(" mg/L");
 
     Serial.println("Loop completed");
-    delay(5000); // Wait for 1 second before the next loop iteration
+
+    // Sends collected data to the ESP32 via serial communication
+    String data = String("Temperature:") + String(temperature) +
+                  ",pH:" + String(pHValue) +
+                  ",Turbidity_Voltage:" + String(turbidityValue) +
+                  ",O2:" + String(DOValue);
+    
+    espSerial.println(data);
+    Serial.println("Data sent to ESP32: " + data);
+
+    delay(1000); // Wait for 1 second before the next loop iteration
 }
