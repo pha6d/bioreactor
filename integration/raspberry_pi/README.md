@@ -224,7 +224,6 @@ sudo nano /etc/apache2/sites-available/default-ssl.conf
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
-```
 
 
 sudo systemctl restart apache2
