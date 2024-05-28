@@ -1,3 +1,5 @@
+[//]: # (Image References)
+[image1]: ./data/server_diagram.png "diagram"
 
 # Raspberry Pi Server
 
@@ -5,8 +7,7 @@
 ## Objective
 The objective of this setup is to establish a reliable and secure server environment on a Raspberry Pi that supports both front-end and back-end development, with the capability to share files over the network and serve applications securely using SSL certificates.
 
-[image1]: ./data/server_diagram.png "diagram"
-
+![diagram][image1]
 
 ## Introduction
 This guide outlines the steps to set up a server on a Raspberry Pi. The goal is to create a fully functional server that uses Samba for file sharing, Node.js and Vue CLI for front-end development, Apache2 as the web server, and FastAPI with Uvicorn for back-end services. Additionally, it includes instructions for setting up SSL certificates using Let's Encrypt and OpenSSL to secure the server.
@@ -35,13 +36,14 @@ sudo mkdir /Raspberry
 sudo chmod 777 /Raspberry
 sudo nano /etc/samba/smb.conf
 
-Add the following lines at the end of the smb.conf file:
+# Add the following lines at the end of the smb.conf file:
 [Raspberry]
 path = /Raspberry
 writeable = yes
 create mask = 0777
 directory mask = 0777
 public = yes
+```
 
 #### Reboot the System
 ```bash
@@ -97,7 +99,6 @@ sudo apt-get update
 sudo apt-get install certbot
 ```
 
-
 #### Obtain SSL Certificates with Let's Encrypt
 ```bash
 sudo systemctl stop apache2
@@ -109,7 +110,6 @@ sudo usermod -aG ssl-cert pi
 sudo chmod 644 /etc/letsencrypt/live/bioreactor.ddns.net/privkey.pem
 sudo chmod 644 /etc/letsencrypt/live/bioreactor.ddns.net/fullchain.pem
 sudo reboot
-
 ```
 
 #### Configure Uvicorn with SSL
@@ -122,8 +122,8 @@ uvicorn backend:app --host 0.0.0.0 --port 8000 --ssl-keyfile /etc/letsencrypt/li
 ```bash
 sudo a2enmod proxy proxy_http ssl
 sudo nano /etc/apache2/sites-available/default-ssl.conf
-```
-Add the following lines to the default-ssl.conf file:
+
+# Add the following lines to the default-ssl.conf file:
 <VirtualHost *:443>
     ServerName bioreactor.ddns.net
 
@@ -141,12 +141,13 @@ Add the following lines to the default-ssl.conf file:
 sudo a2ensite default-ssl
 sudo systemctl reload apache2
 sudo systemctl restart apache2
+```
 
 #### Create Uvicorn Service
 ```bash
 sudo nano /etc/systemd/system/uvicorn.service
-```
-Add the following lines to the uvicorn.service file:
+
+# Add the following lines to the uvicorn.service file:
 [Unit]
 Description=Uvicorn instance to serve FastAPI
 After=network.target
@@ -161,9 +162,11 @@ ExecStart=/home/pi/env_bioreactor/bin/uvicorn backend:app --host 0.0.0.0 --port 
 [Install]
 WantedBy=multi-user.target
 
+
 sudo systemctl daemon-reload
 sudo systemctl enable uvicorn
 sudo systemctl start uvicorn
+```
 
 #### Install Unattended Upgrades
 ```bash
@@ -179,7 +182,6 @@ sudo chmod 640 /etc/letsencrypt/live/bioreactor.ddns.net/privkey.pem
 sudo chmod 640 /etc/letsencrypt/live/bioreactor.ddns.net/fullchain.pem
 sudo usermod -aG ssl-cert pi
 newgrp ssl-cert
-
 ```
 
 #### Start Uvicorn with SSL
@@ -209,8 +211,8 @@ sudo chown root:ssl-cert /etc/letsencrypt/live/bioreactor.ddns.net/fullchain.pem
 sudo chmod 640 /etc/letsencrypt/live/bioreactor.ddns.net/privkey.pem
 sudo chmod 640 /etc/letsencrypt/live/bioreactor.ddns.net/fullchain.pem
 sudo nano /etc/apache2/sites-available/default-ssl.conf
-```
-Ensure the following lines are present in the default-ssl.conf file:
+
+# Ensure the following lines are present in the default-ssl.conf file:
 <VirtualHost *:443>
     ServerName bioreactor.ddns.net
 
@@ -224,8 +226,9 @@ Ensure the following lines are present in the default-ssl.conf file:
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
+```
 
-```bash
+
 sudo systemctl restart apache2
 cd /Raspberry/Bioreactor/
 sudo -E /home/pi/env_bioreactor/bin/uvicorn backend:app --host 0.0.0.0 --port 8000 --ssl-keyfile /etc/letsencrypt/live/bioreactor.ddns.net/privkey.pem --ssl-certfile /etc/letsencrypt/live/bioreactor.ddns.net/fullchain.pem
