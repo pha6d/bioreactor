@@ -1,5 +1,3 @@
-[//]: # (Image References)
-
 
 # Raspberry Pi Server
 
@@ -7,7 +5,7 @@
 ## Objective
 The objective of this setup is to establish a reliable and secure server environment on a Raspberry Pi that supports both front-end and back-end development, with the capability to share files over the network and serve applications securely using SSL certificates.
 
-[image1]: (./data/server_diagram.png) "diagram"
+[image1]: ./data/server_diagram.png "diagram"
 
 
 ## Introduction
