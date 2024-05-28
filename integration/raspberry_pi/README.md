@@ -17,7 +17,7 @@ This guide outlines the steps to set up a server on a Raspberry Pi. The goal is 
 
 ### Install Raspberry Pi OS
 
-Install Raspberry Pi OS using Raspberry Pi Imager:[Download](https://www.raspberrypi.com/software/)
+Install Raspberry Pi OS using Raspberry Pi Imager: [Download](https://www.raspberrypi.com/software/)
 
 ### Raspberry Pi Server Setup
 
@@ -81,10 +81,8 @@ python3 -m venv ~/env_bioreactor
 source ~/env_bioreactor/bin/activate
 pip install fastapi uvicorn
 nano ~/.bashrc
-```
 
 # Add the following line at the end of the ~/.bashrc file:
-```bash
 source ~/env_bioreactor/bin/activate
 ```
 
