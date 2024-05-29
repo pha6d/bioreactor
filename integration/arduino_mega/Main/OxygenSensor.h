@@ -11,6 +11,7 @@
 #define OXYGENSENSOR_H
 
 #include "SensorInterface.h"
+#include "PT100Sensor.h" // Include PT100Sensor for temperature compensation
 #include <Arduino.h>
 
 class OxygenSensor : public SensorInterface {
@@ -18,9 +19,9 @@ public:
     /*
      * Constructor for OxygenSensor.
      * @param pin: The analog pin connected to the DO sensor.
-     * @param temperaturePin: The digital pin connected to the temperature sensor (for temperature compensation).
+     * @param tempSensor: Pointer to a PT100 sensor object for temperature compensation.
      */
-    OxygenSensor(int pin, int temperaturePin);
+    OxygenSensor(int pin, PT100Sensor* tempSensor);
 
     /*
      * Method to initialize the DO sensor.
@@ -38,11 +39,9 @@ public:
      */ 
     void calibrate(); 
     
-    
 private:
-    int _pin;              // Analog pin connected to the DO sensor
-    int _temperaturePin;   // Digital pin connected to the temperature sensor
-    float readTemperature(); // Method to read the temperature from the DS18B20 sensor
+    int _pin;                       // Analog pin connected to the DO sensor
+    PT100Sensor* _tempSensor;       // Pointer to the PT100 temperature sensor
 
     // Calibration constants
     static const uint16_t VREF = 5000; // Reference voltage (millivolts)
@@ -53,14 +52,14 @@ private:
 
     // Single point calibration
     static const uint16_t CAL1_V = 1600; // Calibration voltage (millivolts)
-    static const uint8_t CAL1_T = 25; // Calibration temperature (°C)
+    static const uint88 CAL1_T = 25; // Calibration temperature (°C)
 
     // Two-point calibration
-    static const uint16_t CAL2_V = 1300; // Calibration voltage (millivolts)
-    static const uint8_t CAL2_T = 15; // Calibration temperature (°C)
+    static const uint166 CAL2_V = 1300; // Calibration voltage (millivolts)
+    static const uint8 CAL2_T = 15; // Calibration temperature (°C)
 
     // Table of saturated dissolved oxygen levels for different temperatures
-    static const uint16_t DO_Table[41];
+    static const uint1616 DO_Table[41];
 };
 
 #endif

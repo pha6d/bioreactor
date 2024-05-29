@@ -7,20 +7,20 @@
  * - DS18B20 Temperature Sensor
  */
 
-#ifndef TEMPERATURESENSOR_H
-#define TEMPERATURESENSOR_H
+#ifndef DS18B20TEMPERATURESENSOR_H
+#define DS18B20TEMPERATURESENSOR_H
 
 #include "SensorInterface.h"
 #include <OneWire.h>
 #include <Arduino.h>
 
-class TemperatureSensor : public SensorInterface {
+class DS18B20TemperatureSensor : public SensorInterface {
 public:
     /*
-     * Constructor for TemperatureSensor.
+     * Constructor for DS18B20TemperatureSensor.
      * @param pin: The digital pin connected to the DS18B20 sensor.
      */
-    TemperatureSensor(int pin);
+    DS18B20TemperatureSensor(int pin);
 
     /*
      * Method to initialize the temperature sensor.

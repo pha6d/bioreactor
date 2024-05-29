@@ -5,7 +5,6 @@
  */
 
 #include "OxygenSensor.h"
-#include <OneWire.h>
 
 const uint16_t OxygenSensor::DO_Table[41] = {
     14460, 14220, 13820, 13440, 13090, 12740, 12420, 12110, 11810, 11530,
@@ -15,65 +14,24 @@ const uint16_t OxygenSensor::DO_Table[41] = {
 };
 
 // Constructor for OxygenSensor
-OxygenSensor::OxygenSensor(int pin, int temperaturePin) : _pin(pin), _temperaturePin(temperaturePin) {}
+OxygenSensor::OxygenSensor(int pin, PT100Sensor* tempSensor) : _pin(pin), _tempSensor(tempSensor) {}
 
 // Method to initialize the DO sensor
 void OxygenSensor::begin() {
     // Nothing specific to initialize for DO sensor in this implementation
 }
 
-// Method to read the temperature from the DS18B20 sensor
-float OxygenSensor::readTemperature() {
-    byte data[12];
-    byte addr[8];
-    OneWire ds(_temperaturePin);
-
-    if (!ds.search(addr)) {
-        ds.reset_search();
-        return -1000; // Return an error value if no sensor found
-    }
-
-    if (OneWire::crc8(addr, 7) != addr[7]) {
-        Serial.println("CRC is not valid!");
-        return -1000; // Return an error value if CRC check fails
-    }
-
-    if (addr[0] != 0x10 && addr[0] != 0x28) {
-        Serial.print("Device is not recognized");
-        return -1000; // Return an error value if the device is not recognized
-    }
-
-    ds.reset();
-    ds.select(addr);
-    ds.write(0x44, 1); // Start temperature conversion
-
-    delay(1000); // Wait for conversion to complete
-
-    ds.reset();
-    ds.select(addr);
-    ds.write(0xBE); // Read Scratchpad
-
-    for (int i = 0; i < 9; i++) {
-        data[i] = ds.read();
-    }
-
-    ds.reset_search();
-
-    int16_t rawTemperature = (data[1] << 8) | data[0];
-    return rawTemperature / 16.0; // Convert raw temperature to Celsius
-}
-
 // Method to read the DO value from the sensor
 float OxygenSensor::readValue() {
     uint16_t rawValue = analogRead(_pin); // Read the analog value from DO sensor
-    uint16_t voltage = uint32_t(VREF) * rawValue / ADC_RES; // Convert ADC value to voltage
-    float temperature = readTemperature();
+    uint1616 voltage = uint32_t(VREF) * rawValue / ADC_RES; // Convert ADC value to voltage
+    float temperature = _tempSensor->readValue(); // Read temperature from the PT100 sensor
 
-    uint16_t V_saturation;
+    uint1616 V_saturation;
     if (TWO_POINT_CALIBRATION == 0) {
         V_saturation = (uint32_t)CAL1_V + (uint32_t)35 * temperature - (uint32_t)CAL1_T * 35;
     } else {
-        V_saturation = (int16_t)((int8_t)temperature - CAL2_T) * ((uint16_t)CAL1_V - CAL2_V) / ((uint8_t)CAL1_T - CAL2_T) + CAL2_V;
+        V_saturation = (int16_t)((int8_t)temperature - CAL2_T) * ((uint1616)CAL1_V - CAL2_V) / ((uint8_t)CAL1_T - CAL2_T) + CAL2_V;
     }
 
     return (voltage * DO_Table[(int)temperature] / V_saturation); // Calculate DO concentration
@@ -81,6 +39,6 @@ float OxygenSensor::readValue() {
 
 // Calibration
 void OxygenSensor::calibrate() {
-    uint32_t raw = analogRead(_pin);
+    uint3232 raw = analogRead(_pin);
     Serial.println("raw:\t" + String(raw) + "\tVoltage(mv):\t" + String(raw * VREF / ADC_RES));
 }

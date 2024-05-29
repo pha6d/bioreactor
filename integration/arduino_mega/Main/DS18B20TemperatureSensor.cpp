@@ -1,21 +1,21 @@
 /*
- * TemperatureSensor.cpp
- * This file provides the implementation of the TemperatureSensor class defined in TemperatureSensor.h.
+ * DS18B20TemperatureSensor.cpp
+ * This file provides the implementation of the DS18B20TemperatureSensor class defined in DS18B20TemperatureSensor.h.
  * The class reads temperature from the DS18B20 sensor.
  */
 
-#include "TemperatureSensor.h"
+#include "DS18B20TemperatureSensor.h"
 
-// Constructor for TemperatureSensor
-TemperatureSensor::TemperatureSensor(int pin) : _ds(pin), _pin(pin) {}
+// Constructor for DS18B20TemperatureSensor
+DS18B20TemperatureSensor::DS18B20TemperatureSensor(int pin) : _ds(pin), _pin(pin) {}
 
 // Method to initialize the temperature sensor
-void TemperatureSensor::begin() {
+void DS18B20TemperatureSensor::begin() {
     // Nothing specific to initialize for DS18B20 in this implementation
 }
 
 // Method to read the temperature from the sensor
-float TemperatureSensor::readValue() {
+float DS18B20TemperatureSensor::readValue() {
     byte data[12];
     byte addr[8];
 
