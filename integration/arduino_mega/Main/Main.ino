@@ -22,6 +22,9 @@
 
 // Include programs
 #include "TestActuatorsAndSensors.h" // Include the header file for the test program
+#include "Drain.h"  // Include the header file for the drain program
+#include "Stop.h"   // Include the header file for the stop program
+#include "Mix.h"    // Include the header file for the mix program
 
 // Define the pins for SoftwareSerial
 SoftwareSerial espSerial(11, 12); // RX, TX
@@ -62,7 +65,6 @@ void setup() {
     ledGrowLight.control(false); // Initialize the LED grow light to be off
 
     Serial.println("Setup completed");
-
 }
 
 void loop() {
@@ -72,6 +74,28 @@ void loop() {
 
         if (command.equalsIgnoreCase("tests")) {
             runTestActuatorsAndSensors(airPump, drainPump, stirringMotor, nutrientPump, basePump, heatingPlate, ledGrowLight, waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
+        }
+        // Add the drain command
+        else if (command.startsWith("drain")) {
+            // Extract the rate and duration from the command
+            int spaceIndex1 = command.indexOf(' ');
+            int spaceIndex2 = command.indexOf(' ', spaceIndex1 + 1);
+            int rate = command.substring(spaceIndex1 + 1, spaceIndex2).toInt();
+            int duration = command.substring(spaceIndex2 + 1).toInt();
+            
+            runDrain(drainPump, rate, duration);
+        }
+        // Add the stop command
+        else if (command.equalsIgnoreCase("stop")) {
+            runStop(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
+        }
+        // Add the mix command
+        else if (command.startsWith("mix")) {
+            // Extract the speed from the command
+            int spaceIndex = command.indexOf(' ');
+            int speed = command.substring(spaceIndex + 1).toInt();
+            
+            runMix(stirringMotor, speed);
         }
         // Add other command cases here
         else {
