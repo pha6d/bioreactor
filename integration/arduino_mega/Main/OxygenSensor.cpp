@@ -24,21 +24,21 @@ void OxygenSensor::begin() {
 // Method to read the DO value from the sensor
 float OxygenSensor::readValue() {
     uint16_t rawValue = analogRead(_pin); // Read the analog value from DO sensor
-    uint1616 voltage = uint32_t(VREF) * rawValue / ADC_RES; // Convert ADC value to voltage
+    uint32_t voltage = uint32_t(VREF) * rawValue / ADC_RES; // Convert ADC value to voltage
     float temperature = _tempSensor->readValue(); // Read temperature from the PT100 sensor
 
-    uint1616 V_saturation;
+    uint32_t V_saturation;
     if (TWO_POINT_CALIBRATION == 0) {
         V_saturation = (uint32_t)CAL1_V + (uint32_t)35 * temperature - (uint32_t)CAL1_T * 35;
     } else {
-        V_saturation = (int16_t)((int8_t)temperature - CAL2_T) * ((uint1616)CAL1_V - CAL2_V) / ((uint8_t)CAL1_T - CAL2_T) + CAL2_V;
+        V_saturation = (int16_t)((int8_t)temperature - CAL2_T) * ((uint32_t)CAL1_V - CAL2_V) / ((uint8_t)CAL1_T - CAL2_T) + CAL2_V;
     }
 
     return (voltage * DO_Table[(int)temperature] / V_saturation); // Calculate DO concentration
 }
 
-// Calibration
+// Method for calibration
 void OxygenSensor::calibrate() {
-    uint3232 raw = analogRead(_pin);
+    uint32_t raw = analogRead(_pin);
     Serial.println("raw:\t" + String(raw) + "\tVoltage(mv):\t" + String(raw * VREF / ADC_RES));
 }

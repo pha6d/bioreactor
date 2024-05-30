@@ -7,14 +7,17 @@
 #include "AirFlowSensor.h"
 
 const float AirFlowSensor::_pulsesPerLiter = 5880.0; // Pulses per liter as per the sensor's specification
+AirFlowSensor* AirFlowSensor::instance = nullptr; // Initialize the static instance
 
 // Constructor for AirFlowSensor
-AirFlowSensor::AirFlowSensor(int pin) : _pin(pin), _pulseCount(0), _lastTime(0) {}
+AirFlowSensor::AirFlowSensor(int pin) : _pin(pin), _pulseCount(0), _lastTime(0) {
+    instance = this; // Set the instance to this object
+}
 
 // Method to initialize the air flow meter sensor
 void AirFlowSensor::begin() {
     pinMode(_pin, INPUT_PULLUP); // Set the flow meter pin as input with internal pull-up resistor
-    attachInterrupt(digitalPinToInterrupt(_pin), std::bind(&AirFlowSensor::countPulses, this), FALLING); // Attach interrupt to count pulses
+    attachInterrupt(digitalPinToInterrupt(_pin), countPulses, FALLING); // Attach interrupt to count pulses
 }
 
 // Method to read the flow rate from the sensor
@@ -39,5 +42,5 @@ float AirFlowSensor::readValue() {
 
 // Interrupt service routine to count pulses
 void AirFlowSensor::countPulses() {
-    _pulseCount++;
+    instance->_pulseCount++;
 }

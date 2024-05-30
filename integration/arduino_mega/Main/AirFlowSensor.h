@@ -35,7 +35,7 @@ public:
     /*
      * Interrupt service routine to count pulses.
      */
-    void countPulses();
+    static void countPulses();
 
 private:
     int _pin; // Digital pin connected to the air flow meter's signal wire
@@ -43,6 +43,8 @@ private:
     unsigned long _lastTime; // Last time the flow rate was calculated
     static const unsigned long _interval = 1000; // Interval to calculate flow rate (in milliseconds)
     static const float _pulsesPerLiter; // Pulses per liter as per the sensor's specification
+
+    static AirFlowSensor* instance; // Static instance for the interrupt handler
 };
 
 #endif

@@ -12,9 +12,12 @@
  * - Peristaltic pump (Pulse Generation Control Board + two-phase DC stepping driver + stepper motor)
  */
 
+
+
 #ifndef PERISTALTICPUMP_H
 #define PERISTALTICPUMP_H
 
+#include "ActuatorInterface.h"
 #include <Adafruit_MCP4725.h>
 #include <Arduino.h>
 
