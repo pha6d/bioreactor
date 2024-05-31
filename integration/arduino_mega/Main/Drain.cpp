@@ -1,5 +1,4 @@
 #include "Drain.h"
-#include <SoftwareSerial.h> 
 
 // Include extern declarations
 extern bool stopFlag;

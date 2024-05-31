@@ -32,6 +32,9 @@ SoftwareSerial espSerial(11, 12); // RX, TX
 
 // Declare stopFlag as a global variable
 bool stopFlag = false;
+//
+String currentProgram = "Idle"; // Initial status
+
 
 // Create objects with specific pin assignments and values if applicable 
     // Actuators
@@ -67,7 +70,6 @@ void setup() {
     basePump.begin();
     heatingPlate.control(false); // Initialize the heating plate to be off
     ledGrowLight.control(false); // Initialize the LED grow light to be off
-    runStop(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
 
     Serial.println("Setup completed");
     Serial.println();
@@ -75,33 +77,36 @@ void setup() {
 
 void loop() {
     if (Serial.available() > 0) {
-        String command = Serial.readStringUntil('\n'); // Read the incoming command
-        command.trim(); // Remove any trailing whitespace
+        String command = Serial.readStringUntil('\n');
+        command.trim();
 
         if (command.equalsIgnoreCase("tests")) {
+            currentProgram = "Tests";
             runTestActuatorsAndSensors(airPump, drainPump, stirringMotor, nutrientPump, basePump, heatingPlate, ledGrowLight, waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
+            currentProgram = "Idle";
         }
-        // Add the drain command
         else if (command.startsWith("drain")) {
-            // Extract the rate and duration from the command
             int spaceIndex1 = command.indexOf(' ');
             int spaceIndex2 = command.indexOf(' ', spaceIndex1 + 1);
             int rate = command.substring(spaceIndex1 + 1, spaceIndex2).toInt();
             int duration = command.substring(spaceIndex2 + 1).toInt();
-            
+
+            currentProgram = "Drain";
             runDrain(drainPump, rate, duration);
+            currentProgram = "Idle";
         }
-        // Add the stop command
         else if (command.equalsIgnoreCase("stop")) {
+            currentProgram = "Stop";
             runStop(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
+            currentProgram = "Idle";
         }
-        // Add the mix command
         else if (command.startsWith("mix")) {
-            // Extract the speed from the command
             int spaceIndex = command.indexOf(' ');
             int speed = command.substring(spaceIndex + 1).toInt();
-            
+
+            currentProgram = "Mix";
             runMix(stirringMotor, speed);
+            currentProgram = "Idle";
         }
         // Add the fermentation command
         else if (command.startsWith("fermentation")) {
@@ -125,9 +130,11 @@ void loop() {
             String experimentName = command.substring(spaceIndex7 + 1, spaceIndex8);
             String experimentComment = command.substring(spaceIndex8 + 1);
 
+            currentProgram = "Fermentation";
             runFermentation(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
                             waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
                             tempSetpointVal, phSetpointVal, doSetpointVal, nutrientConc, baseConc, duration, experimentName, experimentComment);
+            currentProgram = "Idle";
         }
         // Add other command cases here
         else {

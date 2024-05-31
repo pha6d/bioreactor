@@ -65,8 +65,7 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.println("WiFi connected");
+  Serial.println("\nWiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
@@ -86,24 +85,19 @@ void loop() {
 
     if (WiFi.status() == WL_CONNECTED) {
       HTTPClient http;
-      http.begin("https://bioreactor.ddns.net:8000/sensor_data");
-      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+      http.begin("http://192.168.1.25:8000/sensor_data");  // Local IP of the Raspberry Pi
+      http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
 
-      String postData = "sensor_value=" + arduinoMessage + "&timestamp=" + formattedTime;
-      int httpResponseCode = http.POST(postData);
+      // Prepare JSON data
+      String jsonData = "{\"sensor_value\": \"" + arduinoMessage + "\", \"timestamp\": \"" + formattedTime + "\"}";
+      int httpResponseCode = http.POST(jsonData);
 
       if (httpResponseCode > 0) {
         String response = http.getString();
         Serial.println("Server response: " + response);
-        Serial2.println("Received: " + arduinoMessage); // Confirmation to the Arduino Mega
-      } else {
-        Serial.println("Error connecting to server");
-        Serial2.println("Error"); // Indicate an error to the Arduino Mega
-      }
-      http.end();
-    } else {
-      Serial.println("WiFi disconnected");
-    }
-  }
-  delay(1000); // Wait before checking again
-}
+        Serial2.println("Received: " + arduinoMath the URI from your previous setting to match your current configuration:
+  - Make sure the URI in `http.begin()` is correctly pointed to your server's IP address and the right endpoint. 
+  - Change the `Content-Type` header to "application/json" to match the expected input format of your FastAPI server.
+  - Modify the data formatting in `http.POST(jsonData)` to send a JSON formatted string, which matches the expected input of your server.
+
+Feel free to adjust further based on your specific server setup and the data you need to send.

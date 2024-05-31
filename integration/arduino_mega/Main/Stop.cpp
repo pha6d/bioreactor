@@ -1,5 +1,4 @@
 #include "Stop.h"
-#include <SoftwareSerial.h> 
 
 // Include extern declarations
 extern bool stopFlag;

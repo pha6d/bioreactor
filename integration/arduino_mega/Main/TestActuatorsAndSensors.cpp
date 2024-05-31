@@ -4,7 +4,6 @@
  */
 
 #include "TestActuatorsAndSensors.h"
-#include <SoftwareSerial.h> 
 
 void runTestActuatorsAndSensors(DCPump &airPump, DCPump &drainPump, StirringMotor &stirringMotor, PeristalticPump &nutrientPump, PeristalticPump &basePump, HeatingPlate &heatingPlate, LEDGrowLight &ledGrowLight, PT100Sensor &waterTempSensor, DS18B20TemperatureSensor &airTempSensor, PHSensor &phSensor, TurbiditySensor &turbiditySensor, OxygenSensor &oxygenSensor, AirFlowSensor &airFlowSensor) {
     

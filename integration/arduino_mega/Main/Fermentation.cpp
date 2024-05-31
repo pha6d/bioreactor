@@ -1,7 +1,6 @@
 #include "Fermentation.h"
 #include "PIDControllers.h"
 #include "Logger.h"
-#include <SoftwareSerial.h> 
 
 // Include extern declarations
 extern bool stopFlag;
@@ -51,7 +50,7 @@ void runFermentation(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrie
         stirringMotor.control(doOutput > 0, doOutput * 2); // Example of stirring speed adjustment based on DO control
 
         // Log data
-        logData(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight, waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor, experimentName, comment);
+        logData(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight, waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor, experimentName, comment, "Fermentation");
 
         delay(1000); // Delay for 1 second
     }

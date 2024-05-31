@@ -1,5 +1,4 @@
 #include "Mix.h"
-#include <SoftwareSerial.h> 
 
 // Implementation of the function to start mixing at a certain speed
 void runMix(StirringMotor& stirringMotor, int speed) {
