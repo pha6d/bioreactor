@@ -4,8 +4,12 @@
  */
 
 #include "TestActuatorsAndSensors.h"
+#include <SoftwareSerial.h> 
 
 void runTestActuatorsAndSensors(DCPump &airPump, DCPump &drainPump, StirringMotor &stirringMotor, PeristalticPump &nutrientPump, PeristalticPump &basePump, HeatingPlate &heatingPlate, LEDGrowLight &ledGrowLight, PT100Sensor &waterTempSensor, DS18B20TemperatureSensor &airTempSensor, PHSensor &phSensor, TurbiditySensor &turbiditySensor, OxygenSensor &oxygenSensor, AirFlowSensor &airFlowSensor) {
+    
+    Serial.println(), Serial.println("run TESTS program");
+
     // Example usage of the air pump
     airPump.control(true, 50);  // Turn the air pump on at 50% speed
     delay(5000);                // Run for 5 seconds
