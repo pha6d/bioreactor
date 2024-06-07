@@ -1,3 +1,6 @@
+**Note:** This code does not currently function correctly. We are aware of the issues and are working on a fix. Please use the FastAPI server implementation in the main directory for a functional server setup.
+
+
 [//]: # (Image References)
 [image1]: ./data/server_diagram.png "diagram"
 

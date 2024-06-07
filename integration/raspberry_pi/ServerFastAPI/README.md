@@ -156,3 +156,101 @@ sudo systemctl status fastapi
 
 
 
+
+#### Create a New Vue Project
+cd /Raspberry/Bioreactor/ServerFastAPI
+vue create frontend
+
+#### Install axios - Axios is a promise-based HTTP client for making requests to your FastAPI backend
+```bash
+npm install axios
+npm install vue-router axios
+```
+
+
+####
+```bash
+sudo chmod -R 777 /Raspberry/Bioreactor/ServerFastAPI/frontend
+sudo chmod -R 777 /Raspberry/Bioreactor
+
+sudo chmod -R 755 /Raspberry/Bioreactor/ServerFastAPI/frontend
+
+ls -l /Raspberry/Bioreactor/ServerFastAPI/frontend
+sudo chmod -R 777 /Raspberry/Bioreactor/ServerFastAPI/frontend
+ls -ld /Raspberry/Bioreactor/ServerFastAPI/frontend
+sudo chown -R pi:pi /Raspberry/Bioreactor/ServerFastAPI/frontend
+sudo chmod -R 755 /Raspberry/Bioreactor/ServerFastAPI/frontend
+
+sudo chown pi:pi /Raspberry/Bioreactor/ServerFastAPI/frontend/vue.config.js
+ls -l /Raspberry/Bioreactor/ServerFastAPI/frontend
+
+sudo ufw status
+sudo ufw allow 8080/tcp
+
+sudo systemctl status apache2
+sudo systemctl stop apache2
+sudo systemctl disable apache2
+
+#### firewall
+sudo apt-get install ufw
+sudo ufw allow 8080/tcp
+sudo ufw allow ssh
+sudo ufw allow 137/udp
+sudo ufw allow 138/udp
+sudo ufw allow 139/tcp
+sudo ufw allow 445/tcp
+sudo ufw enable
+sudo systemctl restart smbd
+sudo ufw allow 8000/tcp
+sudo ufw status
+sudo systemctl restart fastapi
+
+npm install vue-router@next axios
+
+cd /Raspberry/Bioreactor/ServerFastAPI/frontend
+npm install
+npm run serve
+
+which npm
+which node
+
+#### Creating a service file for Vue.js
+```bash
+sudo nano /etc/systemd/system/vuejs.service
+
+# Add the following lines
+[Unit]
+Description=Vue.js server
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+WorkingDirectory=/Raspberry/Bioreactor/ServerFastAPI/frontend
+Environment="PATH=/run/user/1000/fnm_multishells/1898_1717764681009/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/run/user/1000/fnm_multishells/1898_1717764681009/bin/npm run serve
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+```
+
+sudo systemctl daemon-reload
+sudo systemctl restart vuejs.service
+sudo systemctl enable vuejs.service
+sudo systemctl start vuejs.service
+sudo systemctl status vuejs.service
+sudo systemctl enable fastapi.service
+sudo systemctl status fastapi.service
+
+
+
+sudo systemctl restart vuejs.service
+sudo systemctl status vuejs.service
+
+```
+
+
