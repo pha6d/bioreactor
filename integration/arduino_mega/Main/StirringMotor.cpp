@@ -7,9 +7,8 @@
 #include "StirringMotor.h"
 
 // Constructor for StirringMotor
-StirringMotor::StirringMotor(int pwmPin, int relayPin) {
-    _pwmPin = pwmPin;
-    _relayPin = relayPin;
+StirringMotor::StirringMotor(int pwmPin, int relayPin)
+    : _pwmPin(pwmPin), _relayPin(relayPin), status(false) {
     pinMode(_pwmPin, OUTPUT);   // Set PWM pin as output
     pinMode(_relayPin, OUTPUT); // Set relay pin as output
 }
@@ -20,6 +19,7 @@ void StirringMotor::control(bool state, int value) {
         int pwmValue = rpmToPWM(value); // Calculate corresponding PWM value for the target RPM
         analogWrite(_pwmPin, pwmValue); // Apply the PWM value to the motor
         digitalWrite(_relayPin, HIGH);  // Turn on the relay
+        status = true;                  // Set the status to on
         Serial.print("Stirring Motor is ON, RPM set to: ");
         Serial.print(value);
         Serial.print(" corresponds to PWM value: ");
@@ -27,8 +27,14 @@ void StirringMotor::control(bool state, int value) {
     } else {
         analogWrite(_pwmPin, 0);       // Set PWM value to 0
         digitalWrite(_relayPin, LOW);  // Turn off the relay
+        status = false;                // Set the status to off
         Serial.println("Stirring Motor is OFF");
     }
+}
+
+// Method to check if the motor is on
+bool StirringMotor::isOn() const {
+    return status;
 }
 
 // Method to convert RPM to PWM value

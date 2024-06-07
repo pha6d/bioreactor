@@ -1,7 +1,6 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <Arduino.h>
 #include "DCPump.h"
 #include "PeristalticPump.h"
 #include "StirringMotor.h"
@@ -13,14 +12,14 @@
 #include "TurbiditySensor.h"
 #include "OxygenSensor.h"
 #include "AirFlowSensor.h"
-#include <SoftwareSerial.h>
+#include <SoftwareSerial.h> // Include SoftwareSerial
 
-extern SoftwareSerial espSerial;
+extern SoftwareSerial espSerial; // Declare espSerial as an external variable
 
-void logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, PeristalticPump& basePump,
-    StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-    PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor,
-    TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
-    const String& experimentName, const String& comment, const String& currentProgram);
+void logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, PeristalticPump& basePump, 
+             StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight, 
+             PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor, 
+             TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
+             const String& experimentName, const String& comment, const String& programStatus);
 
 #endif

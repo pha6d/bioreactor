@@ -33,13 +33,20 @@ public:
      * @param state: Boolean indicating whether the pump should be on or off.
      * @param value: Integer value to control the speed of the pump.
      */
-    void control(bool state, int value);
+    void control(bool state, int value) override;
+
+    /*
+     * Method to check if the pump is on.
+     * @return Boolean indicating if the pump is on.
+     */
+    bool isOn() const override;
 
 private:
     int _pwmPin;    // PWM pin
     int _relayPin;  // Relay pin
     int _minPWM;    // Minimum PWM value
     const char* _id; // Identifier for the pump
+    bool status; // Track the state of the pump
 };
 
 #endif

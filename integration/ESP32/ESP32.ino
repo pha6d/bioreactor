@@ -37,6 +37,7 @@
  *   - Search for and install WiFi, HTTPClient, and NTPClient.
  */
 
+#include <ArduinoJson.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <NTPClient.h>
@@ -49,12 +50,12 @@ const int txPin = 17;
 
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); // Update every 60 seconds
 
 void setup() {
-  // Initialize serial communication with the computer and the Arduino Mega
   Serial.begin(115200);
   Serial2.begin(115200, SERIAL_8N1, rxPin, txPin);
+  Serial2.setTimeout(500); // Set timeout for Serial2
 
   Serial.println("ESP32 ready");
   delay(1000); // Time to stabilize
@@ -78,26 +79,49 @@ void loop() {
   timeClient.update();
   String formattedTime = timeClient.getFormattedTime();
 
-  // Wait for a message from the Arduino Mega
-  if (Serial2.available()) {
-    String arduinoMessage = Serial2.readStringUntil('\n');
-    Serial.println("Value received from Arduino Mega: " + arduinoMessage);
+  static String inputString = "";  // String to hold input
+  static bool stringComplete = false;  // whether the string is complete
 
-    if (WiFi.status() == WL_CONNECTED) {
-      HTTPClient http;
-      http.begin("http://192.168.1.25:8000/sensor_data");  // Local IP of the Raspberry Pi
-      http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
+  while (Serial2.available()) {
+    char inChar = (char)Serial2.read();
+    inputString += inChar;
+    if (inChar == '\n') {
+      stringComplete = true;
+    }
+  }
 
-      // Prepare JSON data
-      String jsonData = "{\"sensor_value\": \"" + arduinoMessage + "\", \"timestamp\": \"" + formattedTime + "\"}";
-      int httpResponseCode = http.POST(jsonData);
+  if (stringComplete) {
+    inputString.trim(); // Remove any extraneous whitespace
+    Serial.println("Value received from Arduino Mega: " + inputString);
 
-      if (httpResponseCode > 0) {
-        String response = http.getString();
-        Serial.println("Server response: " + response);
-        Serial2.println("Received: " + arduinoMath the URI from your previous setting to match your current configuration:
-  - Make sure the URI in `http.begin()` is correctly pointed to your server's IP address and the right endpoint. 
-  - Change the `Content-Type` header to "application/json" to match the expected input format of your FastAPI server.
-  - Modify the data formatting in `http.POST(jsonData)` to send a JSON formatted string, which matches the expected input of your server.
+    DynamicJsonDocument doc(2048);
+    DeserializationError error = deserializeJson(doc, inputString);
 
-Feel free to adjust further based on your specific server setup and the data you need to send.
+    if (!error) {
+      if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin("http://192.168.1.25:8000/sensor_data");  // Local IP of the Raspberry Pi
+        http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
+
+        String jsonData;
+        serializeJson(doc, jsonData);
+        jsonData = "{\"sensor_value\": " + jsonData + ", \"timestamp\": \"" + formattedTime + "\"}";
+        int httpResponseCode = http.POST(jsonData);
+
+        if (httpResponseCode > 0) {
+          String response = http.getString();
+          Serial.println("Server response: " + response);
+        } else {
+          Serial.print("Error on sending POST: ");
+          Serial.println(httpResponseCode);
+        }
+        http.end();
+      }
+    } else {
+      Serial.println("Invalid JSON format received: " + inputString);
+    }
+
+    inputString = "";
+    stringComplete = false;
+  }
+}

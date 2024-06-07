@@ -12,8 +12,6 @@
  * - Peristaltic pump (Pulse Generation Control Board + two-phase DC stepping driver + stepper motor)
  */
 
-
-
 #ifndef PERISTALTICPUMP_H
 #define PERISTALTICPUMP_H
 
@@ -21,7 +19,7 @@
 #include <Adafruit_MCP4725.h>
 #include <Arduino.h>
 
-class PeristalticPump {
+class PeristalticPump : public ActuatorInterface {
 public:
     /*
      * Constructor for PeristalticPump.
@@ -42,7 +40,13 @@ public:
      * @param state: Boolean indicating whether the pump should be on or off.
      * @param flowRate: Desired flow rate in ml/min.
      */
-    void control(bool state, float flowRate);
+    void control(bool state, int value) override;
+
+    /*
+     * Method to check if the pump is on.
+     * @return Boolean indicating if the pump is on.
+     */
+    bool isOn() const override;
 
 private:
     uint8_t _dacAddress;    // I2C address of the DAC
@@ -50,6 +54,7 @@ private:
     float _maxFlowRate;     // Maximum flow rate of the pump
     const char* _id;        // Identifier for the pump
     Adafruit_MCP4725 _dac;  // DAC instance
+    bool status;            // Track the state of the pump
 
     /*
      * Converts flow rate in ml/min to DAC value.

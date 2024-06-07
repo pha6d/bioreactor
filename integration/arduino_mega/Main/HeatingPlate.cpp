@@ -7,7 +7,8 @@
 #include "HeatingPlate.h"
 
 // Constructor for HeatingPlate
-HeatingPlate::HeatingPlate(int relayPin, const char* id) : _relayPin(relayPin), _id(id) {
+HeatingPlate::HeatingPlate(int relayPin, const char* id)
+    : _relayPin(relayPin), _id(id), status(false) {
     pinMode(_relayPin, OUTPUT); // Set relay pin as output
     digitalWrite(_relayPin, LOW); // Ensure relay is off initially
 }
@@ -16,11 +17,18 @@ HeatingPlate::HeatingPlate(int relayPin, const char* id) : _relayPin(relayPin), 
 void HeatingPlate::control(bool state, int value) {
     if (state) {
         digitalWrite(_relayPin, HIGH); // Turn on the relay
+        status = true; // Set the status to on
         Serial.print(_id);
         Serial.println(" is ON");
     } else {
         digitalWrite(_relayPin, LOW); // Turn off the relay
+        status = false; // Set the status to off
         Serial.print(_id);
         Serial.println(" is OFF");
     }
+}
+
+// Method to check if the heating plate is on
+bool HeatingPlate::isOn() const {
+    return status;
 }

@@ -1,6 +1,8 @@
 #include "Fermentation.h"
 #include "PIDControllers.h"
 #include "Logger.h"
+#include <SoftwareSerial.h>
+
 
 // Include extern declarations
 extern bool stopFlag;

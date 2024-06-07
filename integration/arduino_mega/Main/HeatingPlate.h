@@ -27,11 +27,18 @@ public:
      * @param state: Boolean indicating whether the heating plate should be on or off.
      * @param value: Not used in this implementation.
      */
-    void control(bool state, int value = 0);
+    void control(bool state, int value = 0) override;
+
+    /*
+     * Method to check if the heating plate is on.
+     * @return Boolean indicating if the heating plate is on.
+     */
+    bool isOn() const override;
 
 private:
     int _relayPin;   // Relay pin
     const char* _id; // Identifier for the heating plate
+    bool status; // Track the state of the heating plate
 };
 
 #endif

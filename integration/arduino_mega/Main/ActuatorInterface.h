@@ -17,6 +17,12 @@ public:
      * @param value: Integer value to control the speed or intensity of the actuator.
      */
     virtual void control(bool state, int value) = 0;
+    
+    /*
+     * Virtual function to check if the actuator is on.
+     * @return: Boolean indicating the state of the actuator.
+     */
+    virtual bool isOn() const = 0; // Add this method
 };
 
 #endif

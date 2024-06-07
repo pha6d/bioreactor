@@ -12,7 +12,6 @@
 
 // The tachometer pin of the fan could not be used because the voltage was too low in the state to be read by arduino.
 
-
 #ifndef STIRRINGMOTOR_H
 #define STIRRINGMOTOR_H
 
@@ -33,11 +32,18 @@ public:
      * @param state: Boolean indicating whether the motor should be on or off.
      * @param value: Integer value to control the target RPM of the motor.
      */
-    void control(bool state, int value);
+    void control(bool state, int value) override;
+
+    /*
+     * Method to check if the motor is on.
+     * @return Boolean indicating if the motor is on.
+     */
+    bool isOn() const override;
 
 private:
     int _pwmPin;   // PWM pin
     int _relayPin; // Relay pin
+    bool status;   // Track the state of the motor
 
     /*
      * Method to convert RPM to PWM value.
