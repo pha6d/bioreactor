@@ -16,10 +16,14 @@
 
 extern SoftwareSerial espSerial; // Declare espSerial as an external variable
 
-void logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, PeristalticPump& basePump, 
-             StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight, 
-             PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor, 
-             TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
-             const String& experimentName, const String& comment, const String& programStatus);
+void logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, PeristalticPump& basePump,
+    StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
+    PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor,
+    TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
+    const String& currentProgram, const String& programStatus);
+
+void logStartupParameters(const String& programType, int rateOrSpeed, int duration,
+    float tempSetpoint, float phSetpoint, float doSetpoint, float nutrientConc,
+    float baseConc, const String& experimentName, const String& comment);
 
 #endif

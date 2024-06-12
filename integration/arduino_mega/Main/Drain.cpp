@@ -1,37 +1,56 @@
+/*
+ * Drain.cpp
+ * This file manages the drain program using the DrainProgram class.
+ * It periodically checks if the stopFlag is set and stops the drain pump if necessary.
+ */
+
 #include "Drain.h"
 
-// Include extern declarations
+ // External declarations to share global variables
 extern bool stopFlag;
-/*
-void runDrain(DCPump& drainPump, int rate, int duration) {
-    Serial.println("run DRAIN program");
-    unsigned long startTime = millis();
-    stopFlag = false;  // Reset stopFlag at the start of the Drain process
-    drainPump.control(true, rate); // Start the pump with the specified rate
+extern String currentProgram;
+extern String programStatus;
 
-    while ((millis() - startTime) < (duration * 1000)) {
-        if (stopFlag) {
-            break; // Exit the loop if stop is requested
-        }
-        delay(100); // Small delay to prevent CPU overload
-    }
-
-    drainPump.control(false, 0); // Stop the pump after the specified duration or if stopped
+// Initialization of the drain program
+void DrainProgram::begin(DCPump& pump, int rate, int duration) {
+    this->drainPump = &pump;  // Set the drain pump
+    this->rate = rate;        // Set the pump rate
+    this->duration = duration;  // Set the drain process duration
+    this->startTime = millis();  // Record the start time
+    this->running = true;     // Set the running state to true
+    stopFlag = false;         // Reset the stop flag
+    currentProgram = "Drain"; // Set the name of the current program
+    programStatus = "Running"; // Set the program status to "Running"
+    Serial.println("Drain started."); // Log the start of the drain process
 }
-*/
 
-void runDrain(DCPump& drainPump, int rate, int duration) {
-    Serial.println("run DRAIN program");
-    Serial.println("Drain started.");
-    unsigned long startTime = millis();
-    while (millis() - startTime < duration * 1000) {
-        if (stopFlag) {
-            Serial.println("Drain interrupted.");
-            break;
-        }
-        drainPump.control(true, rate);
-        delay(100); // Adjust the delay as needed
+// Update the drain program
+void DrainProgram::update() {
+    if (!running) return;  // If the program is not running, exit the function
+
+    if (stopFlag) {  // Check if the stop flag is set
+        Serial.println("Drain interrupted.");
+        programStatus = "Stopped";  // Update the program status
+        running = false;  // Stop the program
+        drainPump->control(false, 0);  // Stop the drain pump
+        Serial.println("Drain Pump is OFF");
+        return;  // Exit the function
     }
-    drainPump.control(false, 0);
-    Serial.println("Drain finished.");
+
+    if (millis() - startTime < duration * 1000) {  // Check if the drain duration has not yet elapsed
+        drainPump->control(true, rate);  // Continue running the drain pump
+        Serial.println("Drain Pump is ON, Speed set to: " + String(rate));
+    }
+    else {  // If the drain duration has elapsed
+        drainPump->control(false, 0);  // Stop the drain pump
+        programStatus = "Completed";  // Update the program status
+        running = false;  // Stop the program
+        Serial.println("Drain finished.");
+        Serial.println("Drain Pump is OFF");
+    }
+}
+
+// Check if the drain program is running
+bool DrainProgram::isRunning() {
+    return running;
 }

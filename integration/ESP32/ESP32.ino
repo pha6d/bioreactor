@@ -53,6 +53,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); // Update every 60 seconds
 
 void setup() {
+  // Initialize serial communication with the computer and the Arduino Mega
   Serial.begin(115200);
   Serial2.begin(115200, SERIAL_8N1, rxPin, txPin);
   Serial2.setTimeout(500); // Set timeout for Serial2
@@ -79,30 +80,21 @@ void loop() {
   timeClient.update();
   String formattedTime = timeClient.getFormattedTime();
 
-  static String inputString = "";  // String to hold input
-  static bool stringComplete = false;  // whether the string is complete
+  // Wait for a message from the Arduino Mega
+  if (Serial2.available()) {
+    String arduinoMessage = Serial2.readStringUntil('\n');
+    Serial.println("Value received from Arduino Mega: " + arduinoMessage);
 
-  while (Serial2.available()) {
-    char inChar = (char)Serial2.read();
-    inputString += inChar;
-    if (inChar == '\n') {
-      stringComplete = true;
-    }
-  }
-
-  if (stringComplete) {
-    inputString.trim(); // Remove any extraneous whitespace
-    Serial.println("Value received from Arduino Mega: " + inputString);
-
+    // Validate the JSON format
     DynamicJsonDocument doc(2048);
-    DeserializationError error = deserializeJson(doc, inputString);
-
+    DeserializationError error = deserializeJson(doc, arduinoMessage);
     if (!error) {
       if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
         http.begin("http://192.168.1.25:8000/sensor_data");  // Local IP of the Raspberry Pi
         http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
 
+        // Prepare JSON data
         String jsonData;
         serializeJson(doc, jsonData);
         jsonData = "{\"sensor_value\": " + jsonData + ", \"timestamp\": \"" + formattedTime + "\"}";
@@ -118,10 +110,7 @@ void loop() {
         http.end();
       }
     } else {
-      Serial.println("Invalid JSON format received: " + inputString);
+      Serial.println("Invalid JSON format received: " + arduinoMessage);
     }
-
-    inputString = "";
-    stringComplete = false;
   }
 }
