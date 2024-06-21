@@ -14,7 +14,8 @@
 #include "AirFlowSensor.h"
 #include <SoftwareSerial.h> // Include SoftwareSerial
 
-extern SoftwareSerial espSerial; // Declare espSerial as an external variable
+//extern SoftwareSerial espSerial; // Declare espSerial as an external variable
+extern HardwareSerial& espSerial; // Déclarer espSerial comme une variable externe
 
 void logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, PeristalticPump& basePump,
     StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,

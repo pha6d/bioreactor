@@ -15,14 +15,14 @@ StateMachine::StateMachine()
 void StateMachine::startDrain(DCPump& drainPump, int rate, int duration) {
     Serial.println("Starting drain process...");
     drainProgram.begin(drainPump, rate, duration);
-    logStartupParameters("Drain", rate, duration, 0, 0, 0, 0, 0, "Drain", "Drain program started"); // Log the startup parameters
+    logStartupParameters("Drain", rate, duration, 0, 0, 0, 0, 0, "Drain", "Starting drain program");
     currentState = RUNNING;
 }
 
 void StateMachine::startMix(StirringMotor& stirringMotor, int speed) {
     Serial.println("Starting mix process...");
     mixProgram.begin(stirringMotor, speed);
-    logStartupParameters("Mix", speed, 0, 0, 0, 0, 0, 0, "Mix", "Mix program started"); // Log the startup parameters
+    logStartupParameters("Mix", speed, 0, 0, 0, 0, 0, 0, "Mix", "Starting mix program");
     currentState = RUNNING;
 }
 
@@ -65,40 +65,39 @@ void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& 
     heatingPlate.control(false, 0);
     ledGrowLight.control(false);
     currentState = STOPPING;
+    programStatus = "Stopped";  // Update the program status
     Serial.println("Stopping all systems.");
 }
 
 void StateMachine::update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
-    PeristalticPump& basePump, StirringMotor& stirringMotor,
-    HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight) {
+                          PeristalticPump& basePump, StirringMotor& stirringMotor,
+                          HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight) {
     switch (currentState) {
-    case RUNNING:
-        if (drainProgram.isRunning()) {
-            drainProgram.update();
-        }
-        if (mixProgram.isRunning()) {
-            mixProgram.update();
-        }
-        if (testProgram.isRunning()) {
-            testProgram.update();
-        }
-        if (fermentationProgram.isRunning()) {
-            fermentationProgram.update();
-        }
-        break;
-    case STOPPING:
-        if (!airPump.isOn() && !drainPump.isOn() && !nutrientPump.isOn() &&
-            !basePump.isOn() && !stirringMotor.isOn() && !heatingPlate.isOn() &&
-            !ledGrowLight.isOn()) {
-            currentState = IDLE;
-            Serial.println("All systems stopped.");
-        }
-        break;
-    default:
-        break;
+        case RUNNING:
+            if (drainProgram.isRunning()) {
+                drainProgram.update();
+            }
+            if (mixProgram.isRunning()) {
+                mixProgram.update();
+            }
+            if (testProgram.isRunning()) {
+                testProgram.update();
+            }
+            if (fermentationProgram.isRunning()) {
+                fermentationProgram.update();
+            }
+            break;
+        case STOPPING:
+            if (!airPump.isOn() && !drainPump.isOn() && !nutrientPump.isOn() &&
+                !basePump.isOn() && !stirringMotor.isOn() && !heatingPlate.isOn() &&
+                !ledGrowLight.isOn()) {
+                currentState = IDLE;
+                Serial.println("All systems stopped.");
+                programStatus = "Stopped"; // Ensure status is updated to Stopped
+            }
+            break;
+        default:
+            break;
     }
 }
 
-State StateMachine::getState() {
-    return currentState;
-}

@@ -6,7 +6,7 @@
 
 #include "Mix.h"
 
- // External declarations to share global variables
+// External declarations to share global variables
 extern bool stopFlag;
 extern String currentProgram;
 extern String programStatus;
@@ -20,6 +20,8 @@ void MixProgram::begin(StirringMotor& motor, int speed) {
     currentProgram = "Mix";        // Set the name of the current program
     programStatus = "Running";     // Set the program status to "Running"
     Serial.println("Mixing started at speed: " + String(speed)); // Log the start of the mixing process
+    stirringMotor->control(true, speed); // Start the stirring motor at the specified speed
+    Serial.println("Stirring Motor is ON, Speed set to: " + String(speed)); // Log motor start
 }
 
 // Update the mixing program
@@ -35,8 +37,9 @@ void MixProgram::update() {
         return;  // Exit the function
     }
 
-    stirringMotor->control(true, speed);  // Continue running the stirring motor at the specified speed
-    Serial.println("Stirring Motor is ON, Speed set to: " + String(speed));
+    // No need to control the motor here as it's already running
+    // Uncomment if you want to log periodically
+    // Serial.println("Stirring Motor is ON, Speed set to: " + String(speed));
 }
 
 // Check if the mixing program is running

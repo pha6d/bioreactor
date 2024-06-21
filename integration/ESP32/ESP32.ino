@@ -24,6 +24,9 @@
  * - Install the UART Driver (if needed):
  *   - Download and install the UART driver from Silabs USB to UART Bridge VCP Drivers.
  *   - URL: https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
+ *   - Connect your ESP32
+ *   - In Device Manager, find the unrecognized device or one with an exclamation mark under Ports (COM & LPT) or Other Devices.
+ *   - Right-click the device, select Update driver, then choose Browse my computer for drivers.
  * 
  * - Install the ESP32 Board in Arduino IDE:
  *   - Open Arduino IDE.
@@ -35,6 +38,8 @@
  * - Install Necessary Libraries:
  *   - Go to Sketch > Include Library > Manage Libraries.
  *   - Search for and install WiFi, HTTPClient, and NTPClient.
+ *
+ * - Select the board "ESP32 Dev Module"
  */
 
 #include <ArduinoJson.h>
@@ -45,17 +50,19 @@
 #include "config.h"
 
 // Define the pins for Serial2
-const int rxPin = 16;
-const int txPin = 17;
+const int rxPin = 18;
+const int txPin = 19;
 
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); // Update every 60 seconds
 
 void setup() {
-  // Initialize serial communication with the computer and the Arduino Mega
-  Serial.begin(115200);
-  Serial2.begin(115200, SERIAL_8N1, rxPin, txPin);
+  Serial.begin(115200); // Initialize the serial communication for debugging at a baud rate of 115200
+  delay(3000); // Delay for 3 seconds to allow the serial connection to stabilize
+  Serial.println("ESP32 Ready"); // Print a message indicating the ESP32 is ready
+  Serial2.begin(9600, SERIAL_8N1, rxPin, txPin); // Initialize the serial communication for communication with the Arduino Mega at a baud rate of 9600
+  Serial2.setRxBufferSize(256); // Increase the size of the receive buffer to 256 bytes
   Serial2.setTimeout(500); // Set timeout for Serial2
 
   Serial.println("ESP32 ready");
@@ -76,41 +83,83 @@ void setup() {
 }
 
 void loop() {
-  // Update time
-  timeClient.update();
-  String formattedTime = timeClient.getFormattedTime();
+  static String receivedData = ""; // Create a static string to store incoming data
 
-  // Wait for a message from the Arduino Mega
-  if (Serial2.available()) {
-    String arduinoMessage = Serial2.readStringUntil('\n');
-    Serial.println("Value received from Arduino Mega: " + arduinoMessage);
+  while (Serial2.available()) { // Check if data is available to read from Serial2
+    char incomingChar = Serial2.read(); // Read one character from Serial2
+    receivedData += incomingChar; // Append the incoming character to the receivedData string
 
-    // Validate the JSON format
-    DynamicJsonDocument doc(2048);
-    DeserializationError error = deserializeJson(doc, arduinoMessage);
-    if (!error) {
-      if (WiFi.status() == WL_CONNECTED) {
-        HTTPClient http;
-        http.begin("http://192.168.1.25:8000/sensor_data");  // Local IP of the Raspberry Pi
-        http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
+    if (incomingChar == '\n') { // If the incoming character is a newline, it means the end of a message
+      Serial.print("Received from Arduino Mega: "); // Print the prefix for the received message
+      Serial.println(receivedData); // Print the received message
 
-        // Prepare JSON data
-        String jsonData;
-        serializeJson(doc, jsonData);
-        jsonData = "{\"sensor_value\": " + jsonData + ", \"timestamp\": \"" + formattedTime + "\"}";
-        int httpResponseCode = http.POST(jsonData);
+      DynamicJsonDocument doc(2048);
+      DeserializationError error = deserializeJson(doc, receivedData);
+      if (!error) {
+        Serial.println("Valid JSON received"); // Indicate valid JSON was received
+        Serial.println(receivedData); // Print the valid JSON data for debugging
 
-        if (httpResponseCode > 0) {
-          String response = http.getString();
-          Serial.println("Server response: " + response);
-        } else {
-          Serial.print("Error on sending POST: ");
-          Serial.println(httpResponseCode);
+        if (WiFi.status() == WL_CONNECTED) {
+          HTTPClient http;
+          http.begin("http://192.168.1.25:8000/sensor_data");  // Local IP of the Raspberry Pi
+          http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
+
+          // Prepare JSON data
+          doc["event"] = "data";
+          doc["programType"] = doc["prog"];
+          doc["rateOrSpeed"] = 0;
+          doc["duration"] = 0;
+          doc["tempSetpoint"] = 0.0;
+          doc["phSetpoint"] = 0.0;
+          doc["doSetpoint"] = 0.0;
+          doc["nutrientConc"] = 0.0;
+          doc["baseConc"] = 0.0;
+          doc["experimentName"] = "";
+          doc["comment"] = "";
+          doc["currentProgram"] = doc["prog"];
+          doc["programStatus"] = doc["stat"];
+          doc["airPumpStatus"] = doc["ap"];
+          doc["drainPumpStatus"] = doc["dp"];
+          doc["nutrientPumpStatus"] = doc["np"];
+          doc["basePumpStatus"] = doc["bp"];
+          doc["stirringMotorStatus"] = doc["sm"];
+          doc["heatingPlateStatus"] = doc["hp"];
+          doc["ledGrowLightStatus"] = doc["lg"];
+          doc["waterTemp"] = doc["wT"];
+          doc["airTemp"] = doc["aT"];
+          doc["ph"] = doc["pH"];
+          doc["turbidity"] = doc["tb"];
+          doc["oxygen"] = doc["ox"];
+          doc["airFlow"] = doc["af"];
+
+          String jsonData;
+          serializeJson(doc, jsonData);
+          jsonData = "{\"sensor_value\": " + jsonData + ", \"timestamp\": \"" + timeClient.getFormattedTime() + "\"}";
+          Serial.print("Sending JSON to server: "); // Indicate the JSON being sent
+          Serial.println(jsonData); // Print the JSON data being sent for debugging
+
+          int httpResponseCode = http.POST(jsonData);
+          if (httpResponseCode > 0) {
+            String response = http.getString();
+            Serial.println("Server response: " + response);
+          } else {
+            Serial.print("Error on sending POST: ");
+            Serial.println(httpResponseCode);
+          }
+          http.end();
         }
-        http.end();
+      } else {
+        Serial.println("Invalid JSON format received: " + receivedData);
       }
-    } else {
-      Serial.println("Invalid JSON format received: " + arduinoMessage);
+      receivedData = ""; // Reset the receivedData string for the next message
     }
   }
+  delay(500); // Wait for 500 milliseconds
+
+  // Check buffer usage
+  int bufferSize = Serial2.availableForWrite(); // Get the available space in the write buffer
+  int percentageUsed = (100 * (256 - bufferSize)) / 256; // Calculate the percentage of the buffer used
+  Serial.print("Buffer used: "); // Print the prefix for the buffer usage
+  Serial.print(percentageUsed); // Print the buffer usage percentage
+  Serial.println("%"); // Print the percentage symbol
 }

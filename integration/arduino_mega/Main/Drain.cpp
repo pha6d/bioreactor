@@ -6,7 +6,7 @@
 
 #include "Drain.h"
 
- // External declarations to share global variables
+// External declarations to share global variables
 extern bool stopFlag;
 extern String currentProgram;
 extern String programStatus;
@@ -21,7 +21,9 @@ void DrainProgram::begin(DCPump& pump, int rate, int duration) {
     stopFlag = false;         // Reset the stop flag
     currentProgram = "Drain"; // Set the name of the current program
     programStatus = "Running"; // Set the program status to "Running"
-    Serial.println("Drain started."); // Log the start of the drain process
+    Serial.println("Drain started at speed: " + String(rate)); // Log the start of the drain process
+    drainPump->control(true, rate);  // Start the drain pump
+    Serial.println("Drain Pump is ON, Speed set to: " + String(rate)); // Log pump start
 }
 
 // Update the drain program
@@ -37,11 +39,7 @@ void DrainProgram::update() {
         return;  // Exit the function
     }
 
-    if (millis() - startTime < duration * 1000) {  // Check if the drain duration has not yet elapsed
-        drainPump->control(true, rate);  // Continue running the drain pump
-        Serial.println("Drain Pump is ON, Speed set to: " + String(rate));
-    }
-    else {  // If the drain duration has elapsed
+    if (millis() - startTime >= duration * 1000) {  // Check if the drain duration has elapsed
         drainPump->control(false, 0);  // Stop the drain pump
         programStatus = "Completed";  // Update the program status
         running = false;  // Stop the program

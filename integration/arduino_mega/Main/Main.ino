@@ -1,20 +1,20 @@
-#include <SoftwareSerial.h>
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 #include "StateMachine.h"
-#include "Logger.h" // Include Logger
+#include "Logger.h" // Inclure Logger
 
-// Include interfaces
+// Inclure les interfaces
 #include "ActuatorInterface.h"
 #include "SensorInterface.h"
 
-// Include actuators
+// Inclure les actionneurs
 #include "PeristalticPump.h"
 #include "DCPump.h"
 #include "StirringMotor.h"
 #include "HeatingPlate.h"
 #include "LEDGrowLight.h"
 
-// Include sensors
+// Inclure les capteurs
 #include "PHSensor.h"
 #include "OxygenSensor.h"
 #include "TurbiditySensor.h"
@@ -22,18 +22,18 @@
 #include "PT100Sensor.h"
 #include "AirFlowSensor.h"
 
-// Include programs
+// Inclure les programmes
 #include "TestActuatorsAndSensors.h"
 #include "Drain.h"
 #include "Stop.h"
 #include "Mix.h"
 #include "Fermentation.h"
 
-// Define the pins for SoftwareSerial
-SoftwareSerial espSerial(11, 12); // RX, TX
+// Définir le port série pour la communication avec l'ESP32
+#define SerialESP Serial1
 
-// Create objects with specific pin assignments and values if applicable
-// Actuators
+// Créer des objets avec des affectations de broches spécifiques et des valeurs si applicable
+// Actionneurs
 DCPump airPump(5, 6, 10, "Air Pump");
 DCPump drainPump(3, 4, 15, "Drain Pump");
 PeristalticPump nutrientPump(0x61, 7, 105.0, "Nutrient Pump");
@@ -41,7 +41,8 @@ PeristalticPump basePump(0x60, 8, 105.0, "Base Pump");
 StirringMotor stirringMotor(9, 10);
 HeatingPlate heatingPlate(13, "Heating Plate");
 LEDGrowLight ledGrowLight(27, "LED Grow Light");
-// Sensors
+
+// Capteurs
 PT100Sensor waterTempSensor(22, 23, 24, 25);
 DS18B20TemperatureSensor airTempSensor(52);
 PHSensor phSensor(A1);
@@ -49,28 +50,27 @@ TurbiditySensor turbiditySensor(A2);
 OxygenSensor oxygenSensor(A3, &waterTempSensor);
 AirFlowSensor airFlowSensor(26);
 
-// Declare stopFlag as a global variable
+// Déclarer stopFlag comme variable globale
 bool stopFlag = false;
-//
 String currentProgram = "None";
 String programStatus = "Idle";
 
-// Instantiate the DrainProgram, MixProgram, and StateMachine
+// Instancier le programme de drainage, de mélange et la machine à états
 DrainProgram drainProgram;
 MixProgram mixProgram;
 StateMachine stateMachine;
 
-// Variables for timing the logger
+// Variables pour le timing du logger
 unsigned long previousMillis = 0;
-const long interval = 1000; // Interval for logging (1 second)
+const long interval = 1000; // Intervalle pour la journalisation (1 seconde)
 
 void setup() {
     Serial.begin(115200);
-    espSerial.begin(115200);
+    Serial1.begin(9600);
 
     Serial.println("Setup started");
 
-    // Initialize sensors and actuators
+    // Initialiser les capteurs et les actionneurs
     phSensor.begin();
     turbiditySensor.begin();
     oxygenSensor.begin();
@@ -139,7 +139,7 @@ void loop() {
         }
     }
 
-    // Log data every second
+    // Journaliser les données toutes les secondes
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
@@ -151,11 +151,3 @@ void loop() {
 
     stateMachine.update(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
 }
-
-// Example command: fermentation 25.0 7.2 5.5 10.0 1.0 3600 TestExperiment "This is a test comment"
-
-
-// code de l'esp pour prendre en comtpe les nouvelles data
-// ajouter un programmes pour tester chaque actuateur sépérément
-// PID
-// finaliser fermentation
