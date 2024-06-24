@@ -105,17 +105,32 @@ void loop() {
           http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
 
           // Prepare JSON data
-          doc["event"] = "data";
-          doc["programType"] = doc["prog"];
-          doc["rateOrSpeed"] = 0;
-          doc["duration"] = 0;
-          doc["tempSetpoint"] = 0.0;
-          doc["phSetpoint"] = 0.0;
-          doc["doSetpoint"] = 0.0;
-          doc["nutrientConc"] = 0.0;
-          doc["baseConc"] = 0.0;
-          doc["experimentName"] = "";
-          doc["comment"] = "";
+          if (doc.containsKey("ev") && doc["ev"] == "startup") {
+            doc["event"] = doc["ev"];
+            doc["programType"] = doc["pt"];
+            doc["rateOrSpeed"] = doc["rate"];
+            doc["duration"] = doc["dur"];
+            doc["tempSetpoint"] = doc["tSet"];
+            doc["phSetpoint"] = doc["phSet"];
+            doc["doSetpoint"] = doc["doSet"];
+            doc["nutrientConc"] = doc["nutC"];
+            doc["baseConc"] = doc["baseC"];
+            doc["experimentName"] = doc["expN"];
+            doc["comment"] = doc["comm"];
+          } else {
+            doc["event"] = "data";
+            doc["programType"] = doc["prog"];
+            doc["rateOrSpeed"] = 0;
+            doc["duration"] = 0;
+            doc["tempSetpoint"] = 0.0;
+            doc["phSetpoint"] = 0.0;
+            doc["doSetpoint"] = 0.0;
+            doc["nutrientConc"] = 0.0;
+            doc["baseConc"] = 0.0;
+            doc["experimentName"] = "";
+            doc["comment"] = "";
+          }
+
           doc["currentProgram"] = doc["prog"];
           doc["programStatus"] = doc["stat"];
           doc["airPumpStatus"] = doc["ap"];

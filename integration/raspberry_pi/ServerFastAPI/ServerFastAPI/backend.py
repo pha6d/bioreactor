@@ -91,3 +91,4 @@ async def receive_data(data: SensorData):
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing data: {e}")
+
