@@ -1,0 +1,19 @@
+sudo groupadd sharedgroup
+sudo usermod -aG sharedgroup pi
+sudo chown -R pi:sharedgroup /Raspberry
+sudo chmod -R 2775 /Raspberry
+
+sudo nano /etc/samba/smb.conf
+:
+[Raspberry]
+path = /Raspberry
+writeable = yes
+create mask = 0777
+directory mask = 0777
+public = yes
+force group = sharedgroup
+
+sudo systemctl restart smbd
+
+npm install plotly.js-dist
+pip install fastparquet

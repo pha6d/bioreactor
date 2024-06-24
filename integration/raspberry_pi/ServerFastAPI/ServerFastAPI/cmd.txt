@@ -11,5 +11,30 @@ sudo systemctl status fastapi.service
 sudo systemctl restart fastapi.service
 sudo journalctl -u fastapi.service
 
+sudo systemctl stop fastapi.service
+
+1-Start FastAPI Backend:
+sudo systemctl start fastapi.service
+sudo systemctl status fastapi.service
+
+2- Start Vue.js Frontend:
 cd /Raspberry/Bioreactor/ServerFastAPI/frontend
 npm run serve
+
+
+Backend (FastAPI): http://192.168.1.25:8000/
+Frontend (Vue.js): http://192.168.1.25:8080/
+
+
+x- restart
+cd /Raspberry/Bioreactor/ServerFastAPI/frontend
+sudo systemctl restart fastapi.service
+npm run serve
+
+
+
+
+
+
+
+
