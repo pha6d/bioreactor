@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
 import csv
 from datetime import datetime
 import os
+import pandas as pd
+from typing import List
 
 app = FastAPI()
 
@@ -12,6 +15,15 @@ filename = os.path.join(data_dir, "data.csv")
 
 # Ensure the data directory exists
 os.makedirs(data_dir, exist_ok=True)
+
+# Add the CORS middleware to allow requests from the frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://192.168.1.25:8080"],  # Adjust this based on your frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def ensure_csv_header():
     """Ensure that the CSV file has the correct header"""
@@ -92,3 +104,14 @@ async def receive_data(data: SensorData):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing data: {e}")
 
+@app.get("/sensor_data")
+async def get_sensor_data():
+    try:
+        data = []
+        with open(filename, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                data.append(row)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -16,4 +16,14 @@ force group = sharedgroup
 sudo systemctl restart smbd
 
 npm install plotly.js-dist
-pip install fastparquet
+pip install pandas pyarrow fastparquet
+
+npm install plotly.js-dist --save
+npm install plotly.js-dist@latest
+npm install
+
+rm -rf node_modules
+rm package-lock.json
+npm install
+
+npm install webpack --save-dev
