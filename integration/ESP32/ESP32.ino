@@ -1,52 +1,9 @@
-/*
- * ESP32 Code
- * 
- * This code receives data from the Arduino Mega via serial communication and sends it to a web server.
- * 
- * Connections:
- * - RX (pin 16) of ESP32 to TX of Arduino Mega
- * - TX (pin 17) of ESP32 to RX of Arduino Mega
- * - GND of ESP32 to GND of Arduino Mega
- * 
- * Libraries:
- * - WiFi: To handle WiFi connections
- * - HTTPClient: To handle HTTP requests
- * - NTPClient: To get the current time
- * - config.h: Contains the WiFi credentials
- * 
- * How it works:
- * - The ESP32 connects to the WiFi network.
- * - It waits for data from the Arduino Mega via Serial2.
- * - When data is received, it sends the data to a web server using an HTTP POST request.
- * - It sends a confirmation message back to the Arduino Mega.
- * 
- * Software Setup:
- * - Install the UART Driver (if needed):
- *   - Download and install the UART driver from Silabs USB to UART Bridge VCP Drivers.
- *   - URL: https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
- *   - Connect your ESP32
- *   - In Device Manager, find the unrecognized device or one with an exclamation mark under Ports (COM & LPT) or Other Devices.
- *   - Right-click the device, select Update driver, then choose Browse my computer for drivers.
- * 
- * - Install the ESP32 Board in Arduino IDE:
- *   - Open Arduino IDE.
- *   - Go to File > Preferences.
- *   - In the Additional Board Manager URLs field, add: https://dl.espressif.com/dl/package_esp32_index.json.
- *   - Go to Tools > Board > Boards Manager.
- *   - Search for ESP32 and install esp32 by Espressif Systems.
- * 
- * - Install Necessary Libraries:
- *   - Go to Sketch > Include Library > Manage Libraries.
- *   - Search for and install WiFi, HTTPClient, and NTPClient.
- *
- * - Select the board "ESP32 Dev Module"
- */
-
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include <WebSocketsClient.h>
 #include "config.h"
 
 // Define the pins for Serial2
@@ -57,18 +14,95 @@ const int txPin = 19;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); // Update every 60 seconds
 
+// WebSocket client
+WebSocketsClient webSocket;
+
+// Variable pour suivre le dernier message reçu
+unsigned long lastMessageTime = 0;
+
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+  Serial.println("WebSocket event received");
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.println("WebSocket disconnected");
+      break;
+    case WStype_CONNECTED:
+      Serial.println("WebSocket connected");
+      break;
+    case WStype_TEXT:
+      Serial.printf("WebSocket received text: %s\n", payload);
+      lastMessageTime = millis();
+      handleCommand((char*)payload);
+      break;
+    case WStype_BIN:
+      Serial.println("WebSocket received binary data");
+      break;
+    case WStype_PING:
+      Serial.println("WebSocket received ping");
+      break;
+    case WStype_PONG:
+      Serial.println("WebSocket received pong");
+      break;
+    default:
+      Serial.printf("WebSocket received unhandled event type: %d\n", type);
+      break;
+  }
+}
+
+void handleCommand(const char* payload) {
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, payload);
+  if (error) {
+    Serial.println("Failed to parse JSON command");
+    return;
+  }
+
+  String program = doc["program"];
+  String command;
+
+  if (program == "mix") {
+    int speed = doc["speed"];
+    command = "mix " + String(speed);
+  } else if (program == "drain") {
+    int rate = doc["rate"];
+    int duration = doc["duration"];
+    command = "drain " + String(rate) + " " + String(duration);
+  } else if (program == "fermentation") {
+    float temperature = doc["temperature"];
+    float pH = doc["pH"];
+    float dissolvedOxygen = doc["dissolvedOxygen"];
+    float nutrientConcentration = doc["nutrientConcentration"];
+    float baseConcentration = doc["baseConcentration"];
+    int duration = doc["duration"];
+    String experimentName = doc["experimentName"];
+    String comment = doc["comment"];
+    command = "fermentation " + String(temperature) + " " + String(pH) + " " + 
+              String(dissolvedOxygen) + " " + String(nutrientConcentration) + " " + 
+              String(baseConcentration) + " " + String(duration) + " " + 
+              experimentName + " " + comment;
+  } else if (program == "stop") {
+    command = "stop";
+  } else {
+    Serial.println("Unknown program: " + program);
+    return;
+  }
+
+  Serial2.println(command);
+  Serial.println("Sent to Arduino: " + command);
+}
+
 void setup() {
-  Serial.begin(115200); // Initialize the serial communication for debugging at a baud rate of 115200
-  delay(3000); // Delay for 3 seconds to allow the serial connection to stabilize
-  Serial.println("ESP32 Ready"); // Print a message indicating the ESP32 is ready
-  Serial2.begin(9600, SERIAL_8N1, rxPin, txPin); // Initialize the serial communication for communication with the Arduino Mega at a baud rate of 9600
-  Serial2.setRxBufferSize(256); // Increase the size of the receive buffer to 256 bytes
-  Serial2.setTimeout(500); // Set timeout for Serial2
+  Serial.begin(115200);
+  delay(3000);
+  Serial.println("ESP32 Ready");
+  Serial2.begin(9600, SERIAL_8N1, rxPin, txPin);
+  Serial2.setRxBufferSize(256);
+  Serial2.setTimeout(500);
 
   Serial.println("ESP32 ready");
-  delay(1000); // Time to stabilize
+  delay(1000);
 
-  // Connect to the WiFi network
+  // Connect to WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -80,29 +114,56 @@ void setup() {
 
   // Initialize NTP Client
   timeClient.begin();
+
+  // Initialize WebSocket connection
+  webSocket.setExtraHeaders("X-Client-Type: ESP32");
+  webSocket.begin("192.168.1.25", 8000, "/ws");
+  webSocket.onEvent(webSocketEvent);
+  webSocket.setReconnectInterval(5000);
 }
 
 void loop() {
-  static String receivedData = ""; // Create a static string to store incoming data
+  static unsigned long lastCheck = 0;
+  
+  webSocket.loop();
 
-  while (Serial2.available()) { // Check if data is available to read from Serial2
-    char incomingChar = Serial2.read(); // Read one character from Serial2
-    receivedData += incomingChar; // Append the incoming character to the receivedData string
+  // Vérifier périodiquement l'état de la connexion WebSocket
+  if (millis() - lastCheck > 5000) {
+    lastCheck = millis();
+    if (!webSocket.isConnected()) {
+      Serial.println("WebSocket disconnected. Attempting to reconnect...");
+      webSocket.disconnect();
+      webSocket.begin("192.168.1.25", 8000, "/ws");
+    } else {
+      Serial.println("WebSocket is connected");
+    }
+    
+    // Vérifier si nous avons reçu un message récemment
+    if (millis() - lastMessageTime > 60000) {
+      Serial.println("No WebSocket message received in the last minute");
+    }
+  }
 
-    if (incomingChar == '\n') { // If the incoming character is a newline, it means the end of a message
-      Serial.print("Received from Arduino Mega: "); // Print the prefix for the received message
-      Serial.println(receivedData); // Print the received message
+  static String receivedData = "";
 
-      DynamicJsonDocument doc(2048);
+  while (Serial2.available()) {
+    char incomingChar = Serial2.read();
+    receivedData += incomingChar;
+
+    if (incomingChar == '\n') {
+      Serial.print("Received from Arduino Mega: ");
+      Serial.println(receivedData);
+
+      JsonDocument doc;
       DeserializationError error = deserializeJson(doc, receivedData);
       if (!error) {
-        Serial.println("Valid JSON received"); // Indicate valid JSON was received
-        Serial.println(receivedData); // Print the valid JSON data for debugging
+        Serial.println("Valid JSON received");
+        Serial.println(receivedData);
 
         if (WiFi.status() == WL_CONNECTED) {
           HTTPClient http;
-          http.begin("http://192.168.1.25:8000/sensor_data");  // Local IP of the Raspberry Pi
-          http.addHeader("Content-Type", "application/json");  // Specify the content-type as JSON
+          http.begin("http://192.168.1.25:8000/sensor_data");
+          http.addHeader("Content-Type", "application/json");
 
           // Prepare JSON data
           if (doc.containsKey("ev") && doc["ev"] == "startup") {
@@ -150,8 +211,8 @@ void loop() {
           String jsonData;
           serializeJson(doc, jsonData);
           jsonData = "{\"sensor_value\": " + jsonData + ", \"timestamp\": \"" + timeClient.getFormattedTime() + "\"}";
-          Serial.print("Sending JSON to server: "); // Indicate the JSON being sent
-          Serial.println(jsonData); // Print the JSON data being sent for debugging
+          Serial.print("Sending JSON to server: ");
+          Serial.println(jsonData);
 
           int httpResponseCode = http.POST(jsonData);
           if (httpResponseCode > 0) {
@@ -166,15 +227,16 @@ void loop() {
       } else {
         Serial.println("Invalid JSON format received: " + receivedData);
       }
-      receivedData = ""; // Reset the receivedData string for the next message
+      receivedData = "";
     }
   }
-  delay(500); // Wait for 500 milliseconds
+  
+  delay(10); // Petit délai pour éviter de surcharger le CPU
 
-  // Check buffer usage
-  int bufferSize = Serial2.availableForWrite(); // Get the available space in the write buffer
-  int percentageUsed = (100 * (256 - bufferSize)) / 256; // Calculate the percentage of the buffer used
-  Serial.print("Buffer used: "); // Print the prefix for the buffer usage
-  Serial.print(percentageUsed); // Print the buffer usage percentage
-  Serial.println("%"); // Print the percentage symbol
+  // Log périodique pour s'assurer que la boucle fonctionne
+  static unsigned long lastLog = 0;
+  if (millis() - lastLog > 10000) {
+    lastLog = millis();
+    Serial.println("ESP32 loop is running");
+  }
 }

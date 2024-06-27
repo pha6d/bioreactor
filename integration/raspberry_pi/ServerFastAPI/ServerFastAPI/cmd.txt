@@ -16,6 +16,7 @@ sudo systemctl stop fastapi.service
 1-Start FastAPI Backend:
 sudo systemctl start fastapi.service
 sudo systemctl status fastapi.service
+sudo journalctl -u fastapi.service -f
 
 2- Start Vue.js Frontend:
 cd /Raspberry/Bioreactor/ServerFastAPI/frontend
