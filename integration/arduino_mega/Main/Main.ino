@@ -155,7 +155,18 @@ void loop() {
         }
     }
 
-    // Log data every second
+    // Check for incoming commands from Arduino Serial Monitor
+    if (Serial.available() > 0) {
+        String command = Serial.readStringUntil('\n');
+        command.trim();
+
+        Serial.print("Received from Serial Monitor: ");
+        Serial.println(command);
+
+        executeCommand(command);
+    }
+
+    // Log data every interval
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
@@ -220,18 +231,6 @@ void executeCommand(String command) {
         Serial.println("Unknown command: " + command);
     }
 
-
-    // Journaliser les données toutes les secondes
-    unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= interval) {
-        previousMillis = currentMillis;
-
-        logData(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
-                waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-                currentProgram, programStatus);
-    }
-
-    stateMachine.update(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
 }
 
 
