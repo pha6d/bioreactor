@@ -27,42 +27,43 @@ void StateMachine::startMix(StirringMotor& stirringMotor, int speed) {
 }
 
 void StateMachine::startTests(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor,
-    PeristalticPump& nutrientPump, PeristalticPump& basePump,
-    HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-    PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
-    PHSensor& phSensor, TurbiditySensor& turbiditySensor,
-    OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor) {
+                              PeristalticPump& nutrientPump, PeristalticPump& basePump,
+                              HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
+                              PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
+                              PHSensor& phSensor, TurbiditySensor& turbiditySensor,
+                              OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor) {
     Serial.println("Starting tests...");
     testProgram.begin(airPump, drainPump, stirringMotor, nutrientPump, basePump, heatingPlate, ledGrowLight,
-        waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
+                      waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
     currentState = RUNNING;
 }
 
 void StateMachine::startFermentation(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
-    PeristalticPump& basePump, StirringMotor& stirringMotor, HeatingPlate& heatingPlate,
-    LEDGrowLight& ledGrowLight, PT100Sensor& waterTempSensor,
-    DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor,
-    TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor,
-    AirFlowSensor& airFlowSensor, float tempSetpoint, float phSetpoint,
-    float doSetpoint, float nutrientConc, float baseConc, int duration,
-    const String& experimentName, const String& comment) {
+                                     PeristalticPump& basePump, StirringMotor& stirringMotor,
+                                     HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
+                                     PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
+                                     PHSensor& phSensor, TurbiditySensor& turbiditySensor,
+                                     OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
+                                     float tempSetpoint, float phSetpoint, float doSetpoint,
+                                     float nutrientConc, float baseConc, int duration,
+                                     const String& experimentName, const String& comment) {
     Serial.println("Starting fermentation process...");
     fermentationProgram.begin(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
-        waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-        tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, experimentName, comment);
+                              waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
+                              tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, experimentName, comment);
     logStartupParameters("Fermentation", 0, duration, tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, experimentName, comment); // Log the startup parameters
     currentState = RUNNING;
 }
 
 void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
-    PeristalticPump& basePump, StirringMotor& stirringMotor,
-    HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight) {
+                           PeristalticPump& basePump, StirringMotor& stirringMotor,
+                           HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight) {
     airPump.control(false, 0);
     drainPump.control(false, 0);
     nutrientPump.control(false, 0);
     basePump.control(false, 0);
     stirringMotor.control(false, 0);
-    heatingPlate.control(false, 0);
+    heatingPlate.control(false);
     ledGrowLight.control(false);
     currentState = STOPPING;
     programStatus = "Stopped";  // Update the program status
@@ -100,4 +101,3 @@ void StateMachine::update(DCPump& airPump, DCPump& drainPump, PeristalticPump& n
             break;
     }
 }
-

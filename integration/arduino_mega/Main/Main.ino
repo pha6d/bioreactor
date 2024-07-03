@@ -149,6 +149,12 @@ void loop() {
                 executeCommand(command);
             } else if (program == "stop") {
                 executeCommand("stop");
+            } else if (receivedData.equalsIgnoreCase("test_temp_pid")) {
+              testPIDControllers.beginTempPID(tempPID, waterTempSensor);
+            } else if (receivedData.equalsIgnoreCase("test_ph_pid")) {
+              testPIDControllers.beginPhPID(phPID, phSensor);
+            } else if (receivedData.equalsIgnoreCase("test_do_pid")) {
+              testPIDControllers.beginDoPID(doPID, oxygenSensor);
             } else {
                 Serial.println("Unknown program: " + program);
             }
