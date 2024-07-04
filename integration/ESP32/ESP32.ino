@@ -33,11 +33,6 @@
  * - Install Necessary Libraries:
  *   - Go to Sketch > Include Library > Manage Libraries.
  *   - Search for and install ArduinoJson, WiFi, HTTPClient, NTPClient, and WebSocketsClient.
- *
- * Firmware Updates:
- * - You can check for the latest firmware updates for the ESP32 at the Espressif website:
- *   - https://www.espressif.com/en/products/socs/esp32/resources
- * - Follow the instructions provided by Espressif to update the firmware on your ESP32 board.
  */
 
 #include <ArduinoJson.h>
@@ -98,7 +93,45 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 // Function to handle commands received from the WebSocket server
 void handleCommand(const char* payload) {
-  // Code to parse the JSON command and execute the corresponding action
+    JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, payload);
+  if (error) {
+    Serial.println("Failed to parse JSON command");
+    return;
+  }
+
+  String program = doc["program"];
+  String command;
+
+  if (program == "mix") {
+    int speed = doc["speed"];
+    command = "mix " + String(speed);
+  } else if (program == "drain") {
+    int rate = doc["rate"];
+    int duration = doc["duration"];
+    command = "drain " + String(rate) + " " + String(duration);
+  } else if (program == "fermentation") {
+    float temperature = doc["temperature"];
+    float pH = doc["pH"];
+    float dissolvedOxygen = doc["dissolvedOxygen"];
+    float nutrientConcentration = doc["nutrientConcentration"];
+    float baseConcentration = doc["baseConcentration"];
+    int duration = doc["duration"];
+    String experimentName = doc["experimentName"];
+    String comment = doc["comment"];
+    command = "fermentation " + String(temperature) + " " + String(pH) + " " + 
+              String(dissolvedOxygen) + " " + String(nutrientConcentration) + " " + 
+              String(baseConcentration) + " " + String(duration) + " " + 
+              experimentName + " " + comment;
+  } else if (program == "stop") {
+    command = "stop";
+  } else {
+    Serial.println("Unknown program: " + program);
+    return;
+  }
+
+  Serial2.println(command);
+  Serial.println("Sent to Arduino: " + command);
 }
 
 void setup() {
