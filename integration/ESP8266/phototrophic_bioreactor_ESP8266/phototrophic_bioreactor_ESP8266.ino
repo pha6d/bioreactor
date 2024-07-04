@@ -42,32 +42,27 @@
 #include <WiFiUdp.h>
 #include "config.h"
 
-// Constants for relay and built-in LED pins
 const int relayPin = 5; // GPIO5 (D1 on ESP8266)
 const int builtInLed = 2; // Built-in LED (GPIO2)
 
-// Define NTP client to get time
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600 * 2, 1800000); // Update every half hour, GMT+2 for CEST
 
-// Define the on and off periods in hours (16 hours on, 8 hours off)
 const int onStartHour = 5; // 5 AM
-const int offStartHour = 21; // 21 PM
+const int offStartHour = 21; // 9 PM
 
-// Variable to store manual control state
 bool manualControl = false;
 bool manualState = false;
 
 void setup() {
-  Serial.begin(115200);  // Start the serial communication
-  pinMode(relayPin, OUTPUT); // Set the relay pin as an output
-  pinMode(builtInLed, OUTPUT); // Set the built-in LED pin as an output
+  Serial.begin(115200);
+  delay(1000);  // Allow time for the serial connection to stabilize
+  pinMode(relayPin, OUTPUT);
+  pinMode(builtInLed, OUTPUT);
 
-  // Initialize the relay and built-in LED to off
-  digitalWrite(relayPin, HIGH); // Relay OFF (HIGH turns OFF the relay for ESP8266)
-  digitalWrite(builtInLed, HIGH); // LED OFF (HIGH turns OFF the LED for ESP8266)
+  digitalWrite(relayPin, HIGH);
+  digitalWrite(builtInLed, HIGH);
 
-  // Connect to WiFi
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -75,44 +70,37 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("Connected");
-
-  // Print the IP address
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
 
-  // Initialize NTP client
   timeClient.begin();
-
-  // Update the time and print it
   timeClient.update();
   Serial.print("Current time: ");
   Serial.println(timeClient.getFormattedTime());
 }
 
 void loop() {
-  // Update time
   timeClient.update();
-  
-  // Print the current time
   Serial.print("Current time: ");
   Serial.println(timeClient.getFormattedTime());
 
-  // Check for serial commands to turn the grow light on or off manually
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
-    command.trim(); // Remove any leading or trailing whitespace
+    command.trim();
+    Serial.print("Received command: ");
+    Serial.println(command);
 
     if (command == "ON") {
       manualControl = true;
       manualState = true;
-      digitalWrite(relayPin, LOW); // Relay ON (LOW turns ON the relay for ESP8266)
-      digitalWrite(builtInLed, LOW); // LED ON (LOW turns ON the LED for ESP8266)
+      digitalWrite(relayPin, LOW);
+      digitalWrite(builtInLed, LOW);
       Serial.println("Manual: LED Grow Light is turned ON.");
     } else if (command == "OFF") {
       manualControl = true;
       manualState = false;
-      digitalWrite(relayPin, HIGH); // Relay OFF (HIGH turns OFF the relay for ESP8266)
-      digitalWrite(builtInLed, HIGH); // LED OFF (HIGH turns OFF the LED for ESP8266)
+      digitalWrite(relayPin, HIGH);
+      digitalWrite(builtInLed, HIGH);
       Serial.println("Manual: LED Grow Light is turned OFF.");
     } else if (command == "AUTO") {
       manualControl = false;
@@ -122,24 +110,18 @@ void loop() {
     }
   }
 
-  // Automatic control based on time if manual control is not active
   if (!manualControl) {
-    // Get the current hour of the day
     int currentHour = (timeClient.getEpochTime() % 86400L) / 3600;
-
     if (currentHour >= onStartHour && currentHour < offStartHour) {
-      // Turn the lights on
-      digitalWrite(relayPin, LOW); // Relay ON (LOW turns ON the relay for ESP8266)
-      digitalWrite(builtInLed, LOW); // LED ON (LOW turns ON the LED for ESP8266)
+      digitalWrite(relayPin, LOW);
+      digitalWrite(builtInLed, LOW);
       Serial.println("Automatic: LED Grow Light is ON");
     } else {
-      // Turn the lights off
-      digitalWrite(relayPin, HIGH); // Relay OFF (HIGH turns OFF the relay for ESP8266)
-      digitalWrite(builtInLed, HIGH); // LED OFF (HIGH turns OFF the LED for ESP8266)
+      digitalWrite(relayPin, HIGH);
+      digitalWrite(builtInLed, HIGH);
       Serial.println("Automatic: LED Grow Light is OFF");
     }
   }
 
-  // Wait for an hour before checking again
-  delay(1800000); // 30 minutes
+  delay(5000); // Shortened delay for quicker testing
 }
