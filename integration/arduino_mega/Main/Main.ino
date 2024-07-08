@@ -18,9 +18,10 @@
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include <ArduinoJson.h>
 #include "StateMachine.h"
 #include "Logger.h"
-#include <ArduinoJson.h>
+#include "PIDController.h"
 
 // Include interfaces
 #include "ActuatorInterface.h"
@@ -48,10 +49,7 @@
 #include "Stop.h"
 #include "Mix.h"
 #include "Fermentation.h"
-#include "PIDControllers.h"
-#include "TestPIDControllers.h"
 
- 
 // Define serial port for communication with ESP32
 #define SerialESP Serial1
 
@@ -78,14 +76,15 @@ bool stopFlag = false;
 String currentProgram = "None";
 String programStatus = "Idle";
 
-// Instantiate drain program, mix program, and state machine
+// Instantiate programs, state machine, and PID controller
 DrainProgram drainProgram;
 MixProgram mixProgram;
 StateMachine stateMachine;
+PIDController pidController;
 
 // Variables for logger timing
 unsigned long previousMillis = 0;
-const long interval = 30000; // Interval for logging (1 second)
+const long interval = 30000; // Interval for logging (30 seconds)
 
 void setup() {
     Serial.begin(115200);  // Initialize serial communication for debugging
@@ -105,11 +104,11 @@ void setup() {
     heatingPlate.control(false);
     ledGrowLight.control(false);
 
+    pidController.initialize(2.0, 5.0, 1.0, 2.0, 5.0, 1.0, 2.0, 5.0, 1.0);
+
     Serial.println("Setup completed");
     Serial.println();
 }
-
-TestPIDControllersProgram testPIDControllers;
 
 void loop() {
     // Check for incoming commands from ESP32
@@ -155,12 +154,6 @@ void loop() {
                 executeCommand(command);
             } else if (program == "stop") {
                 executeCommand("stop");
-            } else if (receivedData.equalsIgnoreCase("test_temp_pid")) {
-              testPIDControllers.beginTempPID(tempPID, waterTempSensor);
-            } else if (receivedData.equalsIgnoreCase("test_ph_pid")) {
-              testPIDControllers.beginPhPID(phPID, phSensor);
-            } else if (receivedData.equalsIgnoreCase("test_do_pid")) {
-              testPIDControllers.beginDoPID(doPID, oxygenSensor);
             } else {
                 Serial.println("Unknown program: " + program);
             }
@@ -178,6 +171,15 @@ void loop() {
         executeCommand(command);
     }
 
+    // Update PID controllers
+    if (pidController.isTestRunning()) {
+        pidController.updateTest();
+    } else {
+        pidController.updateAll(waterTempSensor.readValue(), 
+                                phSensor.readValue(), 
+                                oxygenSensor.readValue());
+    }
+
     // Log data every interval
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
@@ -192,7 +194,6 @@ void loop() {
     stateMachine.update(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
 }
 
-// Function to execute received commands
 void executeCommand(String command) {
     Serial.print("Executing command: ");
     Serial.println(command);
@@ -244,6 +245,14 @@ void executeCommand(String command) {
         stateMachine.startFermentation(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
                                        waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
                                        tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, experimentName, comment);
+    } else if (command == "test_temp_pid") {
+        pidController.startTest("temp");
+    } else if (command == "test_ph_pid") {
+        pidController.startTest("ph");
+    } else if (command == "test_do_pid") {
+        pidController.startTest("do");
+    } else if (command == "stop_pid_test") {
+        pidController.stopTest();
     } else {
         Serial.println("Unknown command. Type 'help' for a list of available commands.");
     }
@@ -266,9 +275,8 @@ void printHelp() {
     Serial.println("stop - Stop all actuators");
     Serial.println("mix <speed> - Start mixing");
     Serial.println("fermentation <temp> <ph> <do> <nutrient_conc> <base_conc> <duration> <experiment_name> <comment> - Start fermentation");
+    Serial.println("test_temp_pid - Test temperature PID controller");
+    Serial.println("test_ph_pid - Test pH PID controller");
+    Serial.println("test_do_pid - Test dissolved oxygen PID controller");
+    Serial.println("stop_pid_test - Stop current PID test");
 }
-
-
-
-
-
