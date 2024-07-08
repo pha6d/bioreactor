@@ -7,10 +7,10 @@
 #include "StirringMotor.h"
 
 // Constructor for StirringMotor
-StirringMotor::StirringMotor(int pwmPin, int relayPin)
-    : _pwmPin(pwmPin), _relayPin(relayPin), status(false) {
-    pinMode(_pwmPin, OUTPUT);   // Set PWM pin as output
-    pinMode(_relayPin, OUTPUT); // Set relay pin as output
+StirringMotor::StirringMotor(int pwmPin, int relayPin, const char* id)
+    : _pwmPin(pwmPin), _relayPin(relayPin), status(false), _id(id) {
+    pinMode(_pwmPin, OUTPUT);
+    pinMode(_relayPin, OUTPUT);
 }
 
 // Method to control the stirring motor

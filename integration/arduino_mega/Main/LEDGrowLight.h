@@ -38,6 +38,8 @@ public:
      */
     bool isOn() const override;
 
+    const char* getName() const override { return _id; }
+
 private:
     int _relayPin;   // Relay pin
     const char* _id; // Identifier for the LED grow light

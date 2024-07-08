@@ -34,27 +34,24 @@ void TestPIDControllersProgram::update() {
     unsigned long elapsedTime = millis() - startTime;
 
     if (elapsedTime < 10000) {
-        // Read the current sensor value
-        if (currentSensor == &waterTempSensor) {
-            tempInput = waterTempSensor.readValue();
-        } else if (currentSensor == &phSensor) {
-            phInput = phSensor.readValue();
-        } else if (currentSensor == &oxygenSensor) {
-            doInput = oxygenSensor.readValue();
+        if (currentSensor == waterTempSensor) {
+            tempInput = waterTempSensor->readValue();
+            tempPID.Compute();
+            Serial.print("Temperature PID output: ");
+            Serial.println(tempMyOutput);
+        } else if (currentSensor == phSensor) {
+            phInput = phSensor->readValue();
+            phPID.Compute();
+            Serial.print("pH PID output: ");
+            Serial.println(phMyOutput);
+        } else if (currentSensor == oxygenSensor) {
+            doInput = oxygenSensor->readValue();
+            doPID.Compute();
+            Serial.print("Dissolved Oxygen PID output: ");
+            Serial.println(doMyOutput);
         }
-
-        // Compute the PID output
-        currentPID->Compute();
-
-        // Print the PID output
-        Serial.print("PID output: ");
-        Serial.println(currentPID->GetOutput());
     } else {
         running = false;
         Serial.println("PID controller test completed.");
     }
-}
-
-bool TestPIDControllersProgram::isRunning() {
-    return running;
 }

@@ -48,6 +48,9 @@ public:
      */
     bool isOn() const override;
 
+    const char* getName() const override { return _id; }
+
+
 private:
     uint8_t _dacAddress;    // I2C address of the DAC
     int _relayPin;          // Relay pin

@@ -23,6 +23,8 @@ public:
      * @return: Boolean indicating the state of the actuator.
      */
     virtual bool isOn() const = 0; // Add this method
+
+    virtual const char* getName() const = 0;
 };
 
 #endif

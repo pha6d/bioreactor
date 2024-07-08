@@ -4,9 +4,9 @@
 #include <PID_v1_bc.h>
 
 // Define PID variables
-extern double tempSetpoint, tempInput, tempOutput;
-extern double phSetpoint, phInput, phOutput;
-extern double doSetpoint, doInput, doOutput;
+extern double tempSetpoint, tempInput, tempOutput, tempMyOutput;
+extern double phSetpoint, phInput, phOutput, phMyOutput;
+extern double doSetpoint, doInput, doOutput, doMyOutput;
 
 // Initialize PID controllers
 extern PID tempPID;

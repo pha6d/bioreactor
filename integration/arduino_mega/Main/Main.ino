@@ -25,6 +25,7 @@
 // Include interfaces
 #include "ActuatorInterface.h"
 #include "SensorInterface.h"
+#include "ActuatorController.h"
 
 // Include actuators
 #include "PeristalticPump.h"
@@ -47,7 +48,10 @@
 #include "Stop.h"
 #include "Mix.h"
 #include "Fermentation.h"
+#include "PIDControllers.h"
+#include "TestPIDControllers.h"
 
+ 
 // Define serial port for communication with ESP32
 #define SerialESP Serial1
 
@@ -57,7 +61,7 @@ DCPump airPump(5, 6, 10, "Air Pump");
 DCPump drainPump(3, 4, 15, "Drain Pump");
 PeristalticPump nutrientPump(0x61, 7, 105.0, "Nutrient Pump");
 PeristalticPump basePump(0x60, 8, 105.0, "Base Pump");
-StirringMotor stirringMotor(9, 10);
+StirringMotor stirringMotor(9, 10, "Stirring Motor");
 HeatingPlate heatingPlate(13, "Heating Plate");
 LEDGrowLight ledGrowLight(27, "LED Grow Light");
 
@@ -104,6 +108,8 @@ void setup() {
     Serial.println("Setup completed");
     Serial.println();
 }
+
+TestPIDControllersProgram testPIDControllers;
 
 void loop() {
     // Check for incoming commands from ESP32
@@ -191,7 +197,12 @@ void executeCommand(String command) {
     Serial.print("Executing command: ");
     Serial.println(command);
 
-    if (command.equalsIgnoreCase("tests")) {
+    if (command.equalsIgnoreCase("help")) {
+        printHelp();
+    } else if (command.startsWith("test ")) {
+        String testCommand = command.substring(5);  // Remove "test " from the beginning
+        ActuatorController::executeActuator(testCommand);
+    } else if (command.equalsIgnoreCase("tests")) {
         Serial.println("Starting tests...");
         stateMachine.startTests(airPump, drainPump, stirringMotor, nutrientPump, basePump, heatingPlate, ledGrowLight,
                                 waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
@@ -234,9 +245,30 @@ void executeCommand(String command) {
                                        waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
                                        tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, experimentName, comment);
     } else {
-        Serial.println("Unknown command: " + command);
+        Serial.println("Unknown command. Type 'help' for a list of available commands.");
     }
-
 }
+
+void printHelp() {
+    Serial.println("Available commands:");
+    Serial.println("help - Display this help message");
+    Serial.println("test <actuator> <value> <duration> - Test a specific actuator");
+    Serial.println("  Available actuators:");
+    Serial.println("    basePump <flow_rate_ml_per_min> <duration_seconds>");
+    Serial.println("    nutrientPump <flow_rate_ml_per_min> <duration_seconds>");
+    Serial.println("    airPump <speed_0_255> <duration_seconds>");
+    Serial.println("    drainPump <speed_0_255> <duration_seconds>");
+    Serial.println("    stirringMotor <speed_0_255> <duration_seconds>");
+    Serial.println("    heatingPlate <temperature_celsius> <duration_seconds>");
+    Serial.println("    ledGrowLight <intensity_0_255> <duration_seconds>");
+    Serial.println("tests - Run all predefined tests");
+    Serial.println("drain <rate> <duration> - Start draining");
+    Serial.println("stop - Stop all actuators");
+    Serial.println("mix <speed> - Start mixing");
+    Serial.println("fermentation <temp> <ph> <do> <nutrient_conc> <base_conc> <duration> <experiment_name> <comment> - Start fermentation");
+}
+
+
+
 
 

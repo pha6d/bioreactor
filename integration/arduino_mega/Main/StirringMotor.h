@@ -25,7 +25,7 @@ public:
      * @param pwmPin: The pin connected to the PWM control wire of the fan.
      * @param relayPin: The pin connected to the relay controlling the fan's power.
      */
-    StirringMotor(int pwmPin, int relayPin);
+    StirringMotor(int pwmPin, int relayPin, const char* id);
 
     /*
      * Method to control the stirring motor.
@@ -40,10 +40,13 @@ public:
      */
     bool isOn() const override;
 
+    const char* getName() const override { return _id; }
+
 private:
     int _pwmPin;   // PWM pin
     int _relayPin; // Relay pin
     bool status;   // Track the state of the motor
+    const char* _id;
 
     /*
      * Method to convert RPM to PWM value.
