@@ -7,7 +7,7 @@
  * Connections:
  * - RX (pin 18) of ESP32 to TX of Arduino Mega
  * - TX (pin 19) of ESP32 to RX of Arduino Mega
- * - GND of ESP32 to GND of Arduino Mega
+ * - GND of ESP32-S3 to GND of Arduino Mega
  * 
  * Libraries:
  * - ArduinoJson: To handle JSON parsing and serialization
@@ -30,13 +30,17 @@
  * - Install the ESP32 Board in Arduino IDE:
  *   - Open Arduino IDE.
  *   - Go to File > Preferences.
- *   - In the Additional Board Manager URLs field, add: https://dl.espressif.com/dl/package_esp32_index.json.
+ *   - In the Additional Board Manager URLs field, add: https://dl.espressif.com/dl/package_esp32_index.json    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
  *   - Go to Tools > Board > Boards Manager.
  *   - Search for ESP32 and install esp32 by Espressif Systems.
+ *   - Select ESP32S3 Dev Module
  * 
  * - Install Necessary Libraries:
  *   - Go to Sketch > Include Library > Manage Libraries.
  *   - Search for and install ArduinoJson, WiFi, HTTPClient, NTPClient, WebSocketsClient, Crypto, and AES.
+ *
+ * - Partition Scheme
+ *   - If you have space problems uploading the code, do the following: "Select Minimal SPIFFS (3.8MB APP with 256KB SPIFFS) in Tools > Partition Scheme".
  */
 
 #include <ArduinoJson.h>
@@ -48,6 +52,16 @@
 #include <Crypto.h>
 #include <AES.h>
 #include "config.h"
+
+// The config.h file contains :
+/* 
+const char* ssid = "YourWiFiSSID";
+const char* password = "YourWiFiPassword";
+const char* webSocketServer = "192.168.1.25";
+const int webSocketPort = 8000;
+const char* webSocketPath = "/ws";
+const char* sharedSecret = "YourSecretKeyHere"; 
+*/
 
 // Define the pins for Serial2 communication with the Arduino Mega
 const int rxPin = 18;
@@ -151,7 +165,7 @@ void setup() {
   // Initialize the serial communication with the Arduino Mega
   Serial.begin(115200);
   delay(3000);
-  Serial.println("ESP32 Ready");
+  Serial.println("ESP32-S3 Ready");
   Serial2.begin(9600, SERIAL_8N1, rxPin, txPin);
   Serial2.setRxBufferSize(256);
   Serial2.setTimeout(500);
@@ -305,10 +319,10 @@ void loop() {
   
   delay(10); // Small delay to avoid overloading the CPU
 
-  // Periodically log the status of the ESP32 loop
+  // Periodically log the status of the ESP32-S3 loop
   static unsigned long lastLog = 0;
   if (millis() - lastLog > 10000) {
     lastLog = millis();
-    Serial.println("ESP32 loop is running");
+    Serial.println("ESP32-S3 loop is running");
   }
 }

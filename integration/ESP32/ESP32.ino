@@ -2,6 +2,9 @@
  * ESP32 Code
  * 
  * This code receives data from the Arduino Mega via serial communication and sends it to a web server.
+ * It also receives commands from the web server and sends them to the Arduino Mega.
+ * This code handles communication between an Arduino Mega and a web server,
+ * using encrypted WebSocket and HTTP communications.
  * 
  * Connections:
  * - RX (pin 18) of ESP32 to TX of Arduino Mega
@@ -14,25 +17,71 @@
  * - HTTPClient: To handle HTTP requests
  * - NTPClient: To get the current time
  * - WebSocketsClient: To handle WebSocket communication
- * - config.h: Contains the WiFi and WebSocket server credentials
+ * - Crypto: To handle encryption and decryption
+ * - AES: To use AES encryption
+ * - config.h: Contains the WiFi and WebSocket server credentials, and the shared secret key
  * 
  * How it works:
  * - The ESP32 connects to the WiFi network.
  * - It connects to a WebSocket server to receive commands.
- * - When a command is received, it sends the corresponding command to the Arduino Mega via Serial2.
- * - When data is received from the Arduino Mega, it sends the data to a web server using an HTTP POST request.
+ * - When a command is received, it authenticates the command using the shared secret key.
+ * - If the command is authenticated, it sends the corresponding command to the Arduino Mega via Serial2.
+ * - When data is received from the Arduino Mega, it encrypts the data using the shared secret key and sends it to the web server using an HTTP POST request.
  * 
  * Software Setup:
  * - Install the ESP32 Board in Arduino IDE:
  *   - Open Arduino IDE.
  *   - Go to File > Preferences.
- *   - In the Additional Board Manager URLs field, add: https://dl.espressif.com/dl/package_esp32_index.json.
+ *   - In the Additional Board Manager URLs field, add: https://dl.espressif.com/dl/package_esp32_index.json    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
  *   - Go to Tools > Board > Boards Manager.
  *   - Search for ESP32 and install esp32 by Espressif Systems.
+ *   - Select ESP32 Dev Module
  * 
  * - Install Necessary Libraries:
  *   - Go to Sketch > Include Library > Manage Libraries.
- *   - Search for and install ArduinoJson, WiFi, HTTPClient, NTPClient, and WebSocketsClient.
+ *   - Search for and install ArduinoJson, WiFi, HTTPClient, NTPClient, WebSocketsClient, Crypto, and AES.
+ *
+ * - Partition Scheme
+ *   - If you have space problems uploading the code, do the following: "Select Minimal SPIFFS (3.8MB APP with 256KB SPIFFS) in Tools > Partition Scheme".
+ */
+
+ /*
+// config.h
+#ifndef CONFIG_H
+#define CONFIG_H
+// WiFi credentials
+const char ssid[] = "YourWiFiSSID";
+const char password[] = "YourWiFiPassword";
+// Authentication variable
+const uint8_t sharedSecret[] = "YourSecretKeyHere";
+// Others variables
+const char webSocketServer[] = "192.168.1.25";
+const int webSocketPort = 8000;
+const char webSocketPath[] = "/ws";
+#endif // CONFIG_H
+ */
+
+
+/*
+ * ESP32-S3 Code
+ * 
+ * This code receives data from the Arduino Mega via serial communication and sends it to a web server.
+ * It also receives commands from the web server and sends them to the Arduino Mega.
+ * 
+ * Connections:
+ * - RX (pin 18) of ESP32-S3 to TX of Arduino Mega
+ * - TX (pin 19) of ESP32-S3 to RX of Arduino Mega
+ * - GND of ESP32-S3 to GND of Arduino Mega
+ * 
+ * Libraries:
+ * - ArduinoJson: To handle JSON parsing and serialization
+ * - WiFi: To handle WiFi connections
+ * - HTTPClient: To handle HTTP requests
+ * - NTPClient: To get the current time
+ * - WebSocketsClient: To handle WebSocket communication
+ * - Crypto: To handle encryption and decryption
+ * - AES: To use AES encryption
+ * - config.h: Contains the WiFi and WebSocket server credentials, and the shared secret key
  */
 
 #include <ArduinoJson.h>
