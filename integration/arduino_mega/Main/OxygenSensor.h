@@ -7,6 +7,22 @@
  * - Gravity: Analog Dissolved Oxygen Sensor / Meter Kit for Arduino
  */
 
+/*
+Installation Instructions:
+
+For Gravity: Analog Dissolved Oxygen Sensor / Meter Kit for Arduino
+@https://wiki.dfrobot.com/Gravity__Analog_Dissolved_Oxygen_Sensor_SKU_SEN0237
+1. Connect the DO sensor to the Arduino board:
+    - Signal Pin to an analog pin on the Arduino (A1 in this case).
+    - V+ to 5V on the Arduino.
+    - GND to GND on the Arduino.
+2. Please ensure that the sensor is calibrated in air before the first use to ensure accurate readings. Submerge the sensor in water and wait several minutes for the readings to stabilize before calibration:
+    -Use a stirrer or an eggbeater to continuously stir or Use an air pump to continuously inflate the water for 10 minutes to saturate the dissolved oxygen). To obtain two points, perform this procedure with one water cooled in the fridge and the other at room temperature or heated.
+    -Add sodium sulfite(Na2SO3) into water until it is saturated. This can consume all the oxygen in the water to obtain the zero dissolved oxygen liquid.
+3. For calibration in the air, expose the membrane to the air and set the output value to 100% oxygen saturation (can be done via software using calibration commands or physically via the potentiometer on the sensor board).
+4. The actual DO measurement will vary with temperature. It is highly recommended to use a temperature compensation function which can be achieved by integrating a temperature sensor like the DS18B20 to provide real-time temperature data for more accurate DO readings.
+*/
+
 #ifndef OXYGENSENSOR_H
 #define OXYGENSENSOR_H
 

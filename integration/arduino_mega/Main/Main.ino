@@ -46,7 +46,6 @@
 // Include programs
 #include "TestActuatorsAndSensors.h"
 #include "Drain.h"
-#include "Stop.h"
 #include "Mix.h"
 #include "Fermentation.h"
 
@@ -192,6 +191,8 @@ void loop() {
 
     // Update the state machine
     stateMachine.update(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
+    // Update ActuatorController
+    ActuatorController::update();
 }
 
 void executeCommand(String command) {

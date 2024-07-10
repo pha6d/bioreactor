@@ -3,7 +3,8 @@
 #include "Fermentation.h"
 #include "Drain.h"
 #include "Mix.h"
-#include "Logger.h" // Include Logger
+#include "Logger.h" 
+#include "ActuatorController.h" 
 
 // External variables for shared states
 extern String currentProgram;
@@ -65,9 +66,20 @@ void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& 
     stirringMotor.control(false, 0);
     heatingPlate.control(false);
     ledGrowLight.control(false);
+    extern bool stopFlag;
+    stopAllTests();
     currentState = STOPPING;
-    programStatus = "Stopped";  // Update the program status
+    programStatus = "Stopped";  
     Serial.println("Stopping all systems.");
+}
+
+void StateMachine::stopAllTests() {
+    ActuatorController::stopAllActuators();
+    testRunning = false;
+}
+
+bool StateMachine::isTestRunning() const {
+    return ActuatorController::isTestRunning();
 }
 
 void StateMachine::update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
@@ -86,6 +98,13 @@ void StateMachine::update(DCPump& airPump, DCPump& drainPump, PeristalticPump& n
             }
             if (fermentationProgram.isRunning()) {
                 fermentationProgram.update();
+            }
+            if (ActuatorController::isTestRunning()) {
+                testRunning = true;
+            } else if (testRunning) {
+                testRunning = false;
+                currentState = IDLE;
+                programStatus = "Idle";
             }
             break;
         case STOPPING:

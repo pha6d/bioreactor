@@ -10,6 +10,10 @@
 #include "Fermentation.h"
 #include "Drain.h"
 #include "Mix.h"
+#include "ActuatorController.h" 
+
+
+extern bool stopFlag;
 
 enum State {
     IDLE,
@@ -42,6 +46,9 @@ public:
     void update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
         PeristalticPump& basePump, StirringMotor& stirringMotor,
         HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight);
+    void stopAllTests();
+    bool isTestRunning() const;
+
 
     State getState();
 
@@ -53,6 +60,7 @@ private:
     MixProgram mixProgram;
     TestActuatorsAndSensorsProgram testProgram;
     FermentationProgram fermentationProgram;
+    bool testRunning;
 };
 
 #endif // STATE_MACHINE_H

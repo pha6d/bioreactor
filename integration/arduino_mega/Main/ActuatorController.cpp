@@ -9,25 +9,40 @@ extern DCPump drainPump;
 extern StirringMotor stirringMotor;
 extern HeatingPlate heatingPlate;
 extern LEDGrowLight ledGrowLight;
+extern bool stopFlag;
+
+bool ActuatorController::testRunning = false;
+String ActuatorController::currentActuator = "";
+unsigned long ActuatorController::testStartTime = 0;
+int ActuatorController::testDuration = 0;
 
 void ActuatorController::runActuator(const String& actuatorName, float value, int duration) {
+    currentActuator = actuatorName;
+    testRunning = true;
+    testStartTime = millis();
+    testDuration = duration;
+
     if (actuatorName == "basePump") {
-        runPeristalticPump(basePump, value, duration);
+        basePump.control(true, value);
     } else if (actuatorName == "nutrientPump") {
-        runPeristalticPump(nutrientPump, value, duration);
+        nutrientPump.control(true, value);
     } else if (actuatorName == "airPump") {
-        runDCPump(airPump, static_cast<int>(value), duration);
+        airPump.control(true, static_cast<int>(value));
     } else if (actuatorName == "drainPump") {
-        runDCPump(drainPump, static_cast<int>(value), duration);
+        drainPump.control(true, static_cast<int>(value));
     } else if (actuatorName == "stirringMotor") {
-        runStirringMotor(stirringMotor, static_cast<int>(value), duration);
+        stirringMotor.control(true, static_cast<int>(value));
     } else if (actuatorName == "heatingPlate") {
-        runHeatingPlate(heatingPlate, static_cast<int>(value), duration);
+        heatingPlate.control(true, static_cast<int>(value));
     } else if (actuatorName == "ledGrowLight") {
-        runLEDGrowLight(ledGrowLight, static_cast<int>(value), duration);
+        ledGrowLight.control(true, static_cast<int>(value));
     } else {
         Serial.println("Unknown actuator: " + actuatorName);
+        testRunning = false;
+        return;
     }
+
+    logActuatorOperation(actuatorName, value, duration);
 }
 
 void ActuatorController::executeActuator(const String& command) {
@@ -88,4 +103,30 @@ void ActuatorController::runLEDGrowLight(LEDGrowLight& light, int intensity, int
 
 void ActuatorController::logActuatorOperation(const String& actuatorName, float value, int duration) {
     Serial.println("Running " + actuatorName + " at value " + String(value) + " for " + String(duration) + " seconds");
+}
+
+void ActuatorController::update() {
+    if (testRunning) {
+        if (millis() - testStartTime >= testDuration * 1000UL || stopFlag) {
+            stopAllActuators();
+            Serial.println("Test of " + currentActuator + " completed or stopped");
+        }
+    }
+}
+
+void ActuatorController::stopAllActuators() {
+    basePump.control(false, 0);
+    nutrientPump.control(false, 0);
+    airPump.control(false, 0);
+    drainPump.control(false, 0);
+    stirringMotor.control(false, 0);
+    heatingPlate.control(false);
+    ledGrowLight.control(false);
+    testRunning = false;
+    currentActuator = "";
+    Serial.println("All actuators stopped");
+}
+
+bool ActuatorController::isTestRunning() {
+    return testRunning;
 }

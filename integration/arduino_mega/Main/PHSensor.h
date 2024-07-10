@@ -7,6 +7,27 @@
  * - Gravity: Analog pH Meter V2
  */
 
+/*
+Installation Instructions:
+
+For the DS18B20 Temperature Sensor:
+@https://wiki.dfrobot.com/Waterproof_DS18B20_Digital_Temperature_Sensor__SKU_DFR0198_
+1. Connect the DS18B20 to the Arduino using a plugable terminal sensor adapter or directly by wiring.
+    - Red Wire (VCC) to 5V or 3.3V on the Arduino.
+    - Black Wire (GND) to GND on the Arduino.
+    - Blue Wire (Data Signal) to a digital pin on the Arduino (Pin 52 in this case).
+2. Use "Gravity: Terminal Sensor Adapter V2.0" @https://www.dfrobot.com/product-203.html
+        or Place a 4.7kΩ pull-up resistor between the VCC and Data Signal lines to ensure proper communication.
+
+For the Gravity: Analog pH Meter V2:
+@https://www.dfrobot.com/product-1782.html
+1. Connect the pH meter's BNC to the pH probe and the board to the Arduino.
+    - Signal Pin to an analog pin on the Arduino (A1 in this case).
+    - V+ to 5V on the Arduino.
+    - GND to GND on the Arduino.
+2. Before taking measurements, calibrate the pH meter with standard buffer solutions.
+*/
+
 #ifndef PHSENSOR_H
 #define PHSENSOR_H
 

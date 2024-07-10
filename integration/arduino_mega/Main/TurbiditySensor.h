@@ -7,6 +7,15 @@
  * - Gravity: Analog Turbidity Sensor
  */
 
+/*
+Installation Instructions:
+
+For the Gravity: Analog Turbidity Sensor
+@https://wiki.dfrobot.com/Turbidity_sensor_SKU__SEN0189
+1. Connect the sensor output to an analog pin on the Arduino (A2 in this case).
+2. Connect V+ to 5V on the Arduino and GND to GND.
+*/
+
 #ifndef TURBIDITYSENSOR_H
 #define TURBIDITYSENSOR_H
 
