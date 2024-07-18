@@ -1,11 +1,11 @@
 /*
- * Drain.h
+ * DrainProgram.h
  * Header file for the DrainProgram class. This class controls the drain process of the bioreactor.
  * It allows starting, updating, and checking the status of the drain process.
  */
 
-#ifndef DRAIN_H
-#define DRAIN_H
+#ifndef DRAIN_PROGRAM_H
+#define DRAIN_PROGRAM_H
 
 #include "DCPump.h"
 
@@ -29,4 +29,4 @@ private:
     bool running;       // Indicates if the drain process is running
 };
 
-#endif // DRAIN_H
+#endif // DRAIN_PROGRAM_H

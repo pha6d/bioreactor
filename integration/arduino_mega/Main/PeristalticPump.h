@@ -50,6 +50,9 @@ public:
 
     const char* getName() const override { return _id; }
 
+    float getVolumeAdded() const { return volumeAdded; }
+    void resetVolumeAdded() { volumeAdded = 0; }
+
 
 private:
     uint8_t _dacAddress;    // I2C address of the DAC
@@ -58,7 +61,8 @@ private:
     const char* _id;        // Identifier for the pump
     Adafruit_MCP4725 _dac;  // DAC instance
     bool status;            // Track the state of the pump
-
+    float volumeAdded;      // Track the volume added by the pump
+    
     /*
      * Converts flow rate in ml/min to DAC value.
      * @param flowRate: Desired flow rate in ml/min.

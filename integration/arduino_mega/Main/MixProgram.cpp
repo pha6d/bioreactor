@@ -1,10 +1,10 @@
 /*
- * Mix.cpp
+ * MixProgram.cpp
  * This file manages the mixing program using the MixProgram class.
  * It periodically checks if the stopFlag is set and stops the stirring motor if necessary.
  */
 
-#include "Mix.h"
+#include "MixProgram.h"
 
 // External declarations to share global variables
 extern bool stopFlag;

@@ -8,7 +8,7 @@
 
 // Constructor for PeristalticPump
 PeristalticPump::PeristalticPump(uint8_t dacAddress, int relayPin, float maxFlowRate, const char* id)
-    : _dacAddress(dacAddress), _relayPin(relayPin), _maxFlowRate(maxFlowRate), _id(id), status(false) {
+    : _dacAddress(dacAddress), _relayPin(relayPin), _maxFlowRate(maxFlowRate), _id(id), status(false), volumeAdded(0) {
 }
 
 // Initializes the peristaltic pump by setting up the relay pin and the DAC
@@ -29,6 +29,10 @@ void PeristalticPump::control(bool state, int value) {
         Serial.print(_id);
         Serial.print(" is ON with flow rate: ");
         Serial.println(value);
+    } if (state && value > 0) {
+        float flowRate = value;  // Assuming value is in ml/min
+        float duration = 1.0 / 60.0;  // 1 second in minutes
+        volumeAdded += flowRate * duration;
     } else {
         _dac.setVoltage(0, false);                 // Set DAC voltage to 0
         digitalWrite(_relayPin, LOW);              // Turn off the relay

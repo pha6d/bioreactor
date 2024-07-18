@@ -43,12 +43,17 @@ public:
 
     const char* getName() const override { return _id; }
 
+    float getVolumeRemoved() const { return volumeRemoved; }
+
+    void resetVolumeRemoved() { volumeRemoved = 0; }
+
 private:
     int _pwmPin;    // PWM pin
     int _relayPin;  // Relay pin
     int _minPWM;    // Minimum PWM value
     const char* _id; // Identifier for the pump
     bool status; // Track the state of the pump
+    float volumeRemoved;
 };
 
 #endif

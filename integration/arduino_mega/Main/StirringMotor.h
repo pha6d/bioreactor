@@ -24,8 +24,11 @@ public:
      * Constructor for StirringMotor.
      * @param pwmPin: The pin connected to the PWM control wire of the fan.
      * @param relayPin: The pin connected to the relay controlling the fan's power.
+     * @param id: Identifier for the stirring motor.
+     * @param minRPM: Minimum RPM of the motor (default 390).
+     * @param maxRPM: Maximum RPM of the motor (default 1500).
      */
-    StirringMotor(int pwmPin, int relayPin, const char* id);
+    StirringMotor(int pwmPin, int relayPin, const char* id, int minRPM = 390, int maxRPM = 1500);
 
     /*
      * Method to control the stirring motor.
@@ -42,11 +45,25 @@ public:
 
     const char* getName() const override { return _id; }
 
+    /*
+     * Method to get the minimum RPM of the motor.
+     * @return Minimum RPM value.
+     */
+    int getMinRPM() const { return _minRPM; }
+
+    /*
+     * Method to get the maximum RPM of the motor.
+     * @return Maximum RPM value.
+     */
+    int getMaxRPM() const { return _maxRPM; }
+
 private:
     int _pwmPin;   // PWM pin
     int _relayPin; // Relay pin
     bool status;   // Track the state of the motor
     const char* _id;
+    int _minRPM;   // Minimum RPM
+    int _maxRPM;   // Maximum RPM
 
     /*
      * Method to convert RPM to PWM value.

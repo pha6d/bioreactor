@@ -25,6 +25,12 @@ void DCPump::control(bool state, int value) {
         Serial.print(" is ON, Speed set to: ");
         Serial.println(value);
     }
+    if (state && value > 0) {
+        // Assuming a linear relationship between value and flow rate
+        float flowRate = value * 0.1;  // Example: 0.1 ml/min per unit of value
+        float duration = 1.0 / 60.0;  // 1 second in minutes
+        volumeRemoved += flowRate * duration;
+    }
     else {
         analogWrite(_pwmPin, 0); // Set PWM value to 0
         digitalWrite(_relayPin, LOW); // Turn off the relay

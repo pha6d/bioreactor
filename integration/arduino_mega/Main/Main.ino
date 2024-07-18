@@ -16,17 +16,22 @@
  * and logs sensor data at regular intervals.
  */
 
+// Include libraries
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
-#include "StateMachine.h"
-#include "Logger.h"
-#include "PIDController.h"
 
 // Include interfaces
 #include "ActuatorInterface.h"
 #include "SensorInterface.h"
 #include "ActuatorController.h"
+
+// Include core components
+#include "StateMachine.h"
+#include "BioReactorManager.h"
+#include "SafetySystem.h"
+#include "Logger.h"
+#include "PIDManager.h"
 
 // Include actuators
 #include "PeristalticPump.h"
@@ -44,25 +49,23 @@
 #include "AirFlowSensor.h"
 
 // Include programs
-#include "TestActuatorsAndSensors.h"
-#include "Drain.h"
-#include "Mix.h"
-#include "Fermentation.h"
+#include "TestActuatorsProgram.h"
+#include "DrainProgram.h"
+#include "MixProgram.h"
+#include "FermentationProgram.h"
 
 // Define serial port for communication with ESP32
 #define SerialESP Serial1
 
-// Create objects with specific pin assignments and values if applicable
-// Actuators
+// Create objects with specific pin assignments and values
 DCPump airPump(5, 6, 10, "Air Pump");
 DCPump drainPump(3, 4, 15, "Drain Pump");
 PeristalticPump nutrientPump(0x61, 7, 105.0, "Nutrient Pump");
 PeristalticPump basePump(0x60, 8, 105.0, "Base Pump");
-StirringMotor stirringMotor(9, 10, "Stirring Motor");
+StirringMotor stirringMotor(9, 10, "Stirring Motor", 390, 1500);
 HeatingPlate heatingPlate(13, "Heating Plate");
 LEDGrowLight ledGrowLight(27, "LED Grow Light");
 
-// Sensors
 PT100Sensor waterTempSensor(22, 23, 24, 25);
 DS18B20TemperatureSensor airTempSensor(52);
 PHSensor phSensor(A1);
@@ -70,18 +73,21 @@ TurbiditySensor turbiditySensor(A2);
 OxygenSensor oxygenSensor(A3, &waterTempSensor);
 AirFlowSensor airFlowSensor(26);
 
+// Instantiate programs, state machine, and PID controller
+DrainProgram drainProgram;
+MixProgram mixProgram;
+PIDManager pidManager(stirringMotor);
+FermentationProgram fermentationProgram(pidManager);
+Logger logger;
+SafetySystem safetySystem(7, 0.95, 0.1);
+
+StateMachine stateMachine(logger, pidManager);
+
 // Declare global variables
 bool stopFlag = false;
 String currentProgram = "None";
 String programStatus = "Idle";
 
-// Instantiate programs, state machine, and PID controller
-DrainProgram drainProgram;
-MixProgram mixProgram;
-StateMachine stateMachine;
-PIDController pidController;
-
-// Variables for logger timing
 unsigned long previousMillis = 0;
 const long interval = 30000; // Interval for logging (30 seconds)
 
@@ -89,7 +95,7 @@ void setup() {
     Serial.begin(115200);  // Initialize serial communication for debugging
     SerialESP.begin(9600); // Initialize serial communication with ESP32
 
-    Serial.println("Setup started");
+    logger.logInfo("Setup started");
 
     // Initialize sensors and actuators
     phSensor.begin();
@@ -103,10 +109,9 @@ void setup() {
     heatingPlate.control(false);
     ledGrowLight.control(false);
 
-    pidController.initialize(2.0, 5.0, 1.0, 2.0, 5.0, 1.0, 2.0, 5.0, 1.0);
+    pidManager.initialize(2.0, 5.0, 1.0, 2.0, 5.0, 1.0, 2.0, 5.0, 1.0);
 
-    Serial.println("Setup completed");
-    Serial.println();
+    logger.logInfo("Setup completed");
 }
 
 void loop() {
@@ -115,8 +120,7 @@ void loop() {
         String receivedData = SerialESP.readStringUntil('\n');
         receivedData.trim();
 
-        Serial.print("Received from ESP32: ");
-        Serial.println(receivedData);
+        logger.logInfo("Received from ESP32: " + receivedData);
 
         // Check if it's a valid JSON
         JsonDocument doc;
@@ -154,7 +158,7 @@ void loop() {
             } else if (program == "stop") {
                 executeCommand("stop");
             } else {
-                Serial.println("Unknown program: " + program);
+                logger.logWarning("Unknown program: " + program);
             }
         }
     }
@@ -164,40 +168,32 @@ void loop() {
         String command = Serial.readStringUntil('\n');
         command.trim();
 
-        Serial.print("Received from Serial Monitor: ");
-        Serial.println(command);
+        logger.logInfo("Received from Serial Monitor: " + command);
 
         executeCommand(command);
     }
+    
+    // Mise à jour du contrôleur d'actionneurs
+    ActuatorController::update();
 
-    // Update PID controllers
-    if (pidController.isTestRunning()) {
-        pidController.updateTest();
-    } else {
-        pidController.updateAll(waterTempSensor.readValue(), 
-                                phSensor.readValue(), 
-                                oxygenSensor.readValue());
-    }
+    // Update state machine
+    stateMachine.update(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
 
     // Log data every interval
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
 
-        logData(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
-                waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-                currentProgram, programStatus);
+        logger.logData(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
+                       waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
+                       stateMachine.getCurrentProgram(), stateMachine.getCurrentStatus());
     }
-
-    // Update the state machine
-    stateMachine.update(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
-    // Update ActuatorController
-    ActuatorController::update();
+    // Short pause to avoid excessive CPU usage
+    delay(10);
 }
 
 void executeCommand(String command) {
-    Serial.print("Executing command: ");
-    Serial.println(command);
+    logger.logInfo("Executing command: " + command);
 
     if (command.equalsIgnoreCase("help")) {
         printHelp();
@@ -205,57 +201,58 @@ void executeCommand(String command) {
         String testCommand = command.substring(5);  // Remove "test " from the beginning
         ActuatorController::executeActuator(testCommand);
     } else if (command.equalsIgnoreCase("tests")) {
-        Serial.println("Starting tests...");
+        logger.logInfo("Starting tests...");
         stateMachine.startTests(airPump, drainPump, stirringMotor, nutrientPump, basePump, heatingPlate, ledGrowLight,
                                 waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
     } else if (command.startsWith("drain")) {
-        Serial.println("Starting drain...");
+        logger.logInfo("Starting drain...");
         int spaceIndex1 = command.indexOf(' ');
         int spaceIndex2 = command.indexOf(' ', spaceIndex1 + 1);
         int rate = command.substring(spaceIndex1 + 1, spaceIndex2).toInt();
         int duration = command.substring(spaceIndex2 + 1).toInt();
         stateMachine.startDrain(drainPump, rate, duration);
     } else if (command.equalsIgnoreCase("stop")) {
-        Serial.println("Stopping all...");
+        logger.logInfo("Stopping all...");
         stateMachine.stopAll(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
     } else if (command.startsWith("mix")) {
-        Serial.println("Starting mix...");
+        logger.logInfo("Starting mix...");
         int spaceIndex = command.indexOf(' ');
         int speed = command.substring(spaceIndex + 1).toInt();
         stateMachine.startMix(stirringMotor, speed);
     } else if (command.startsWith("fermentation")) {
-        Serial.println("Starting fermentation...");
-        int spaceIndex1 = command.indexOf(' ');
-        int spaceIndex2 = command.indexOf(' ', spaceIndex1 + 1);
-        int spaceIndex3 = command.indexOf(' ', spaceIndex2 + 1);
-        int spaceIndex4 = command.indexOf(' ', spaceIndex3 + 1);
-        int spaceIndex5 = command.indexOf(' ', spaceIndex4 + 1);
-        int spaceIndex6 = command.indexOf(' ', spaceIndex5 + 1);
-        int spaceIndex7 = command.indexOf(' ', spaceIndex6 + 1);
-        int spaceIndex8 = command.indexOf(' ', spaceIndex7 + 1);
-
-        float tempSetpoint = command.substring(spaceIndex1 + 1, spaceIndex2).toFloat();
-        float phSetpoint = command.substring(spaceIndex2 + 1, spaceIndex3).toFloat();
-        float doSetpoint = command.substring(spaceIndex3 + 1, spaceIndex4).toFloat();
-        float nutrientConc = command.substring(spaceIndex4 + 1, spaceIndex5).toFloat();
-        float baseConc = command.substring(spaceIndex5 + 1, spaceIndex6).toFloat();
-        int duration = command.substring(spaceIndex6 + 1, spaceIndex7).toInt();
-        String experimentName = command.substring(spaceIndex7 + 1, spaceIndex8);
-        String comment = command.substring(spaceIndex8 + 1);
-
+        logger.logInfo("Starting fermentation...");
+        // Parse fermentation parameters
+        float tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc;
+        int duration;
+        String experimentName, comment;
+        
+        sscanf(command.c_str(), "fermentation %f %f %f %f %f %d %s %s", 
+               &tempSetpoint, &phSetpoint, &doSetpoint, &nutrientConc, &baseConc, &duration, 
+               experimentName.c_str(), comment.c_str());
+        
         stateMachine.startFermentation(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
                                        waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-                                       tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, experimentName, comment);
+                                       tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, 
+                                       experimentName, comment);
     } else if (command == "test_temp_pid") {
-        pidController.startTest("temp");
+        pidManager.startTest("temp");
     } else if (command == "test_ph_pid") {
-        pidController.startTest("ph");
+        pidManager.startTest("ph");
     } else if (command == "test_do_pid") {
-        pidController.startTest("do");
-    } else if (command == "stop_pid_test") {
-        pidController.stopTest();
+        pidManager.startTest("do");
+    } else if (command.startsWith("adjust_volume")) {
+        // Implementation of manual volume adjustment
+        int firstSpace = command.indexOf(' ');
+        int secondSpace = command.indexOf(' ', firstSpace + 1);
+        if (firstSpace != -1 && secondSpace != -1) {
+            String source = command.substring(firstSpace + 1, secondSpace);
+            float amount = command.substring(secondSpace + 1).toFloat();
+            // Here you should call a method to adjust the volume
+            // For example: bioReactorManager.manuallyAdjustVolume(amount, source);
+            logger.logInfo("Manual volume adjustment: " + source + " " + String(amount));
+        }
     } else {
-        Serial.println("Unknown command. Type 'help' for a list of available commands.");
+        logger.logWarning("Unknown command. Type 'help' for a list of available commands.");
     }
 }
 
@@ -279,5 +276,5 @@ void printHelp() {
     Serial.println("test_temp_pid - Test temperature PID controller");
     Serial.println("test_ph_pid - Test pH PID controller");
     Serial.println("test_do_pid - Test dissolved oxygen PID controller");
-    Serial.println("stop_pid_test - Stop current PID test");
+    Serial.println("adjust_volume <source> <amount> - Manually adjust volume (e.g., adjust_volume NaOH 10.5)");
 }

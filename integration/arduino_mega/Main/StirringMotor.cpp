@@ -7,8 +7,8 @@
 #include "StirringMotor.h"
 
 // Constructor for StirringMotor
-StirringMotor::StirringMotor(int pwmPin, int relayPin, const char* id)
-    : _pwmPin(pwmPin), _relayPin(relayPin), status(false), _id(id) {
+StirringMotor::StirringMotor(int pwmPin, int relayPin, const char* id, int minRPM, int maxRPM)
+    : _pwmPin(pwmPin), _relayPin(relayPin), status(false), _id(id), _minRPM(minRPM), _maxRPM(maxRPM) {
     pinMode(_pwmPin, OUTPUT);
     pinMode(_relayPin, OUTPUT);
 }
@@ -16,12 +16,13 @@ StirringMotor::StirringMotor(int pwmPin, int relayPin, const char* id)
 // Method to control the stirring motor
 void StirringMotor::control(bool state, int value) {
     if (state && value > 0) {
-        int pwmValue = rpmToPWM(value); // Calculate corresponding PWM value for the target RPM
+        int targetRPM = constrain(value, _minRPM, _maxRPM);
+        int pwmValue = rpmToPWM(targetRPM);
         analogWrite(_pwmPin, pwmValue); // Apply the PWM value to the motor
         digitalWrite(_relayPin, HIGH);  // Turn on the relay
         status = true;                  // Set the status to on
         Serial.print("Stirring Motor is ON, RPM set to: ");
-        Serial.print(value);
+        Serial.print(targetRPM);
         Serial.print(" corresponds to PWM value: ");
         Serial.println(pwmValue);
     } else {
