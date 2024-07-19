@@ -1,8 +1,8 @@
 #include "StateMachine.h"
 
-StateMachine::StateMachine(Logger& logger, PIDManager& pidManager)
+StateMachine::StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager& volumeManager)
     : currentState(ProgramState::IDLE), currentProgram("None"), logger(logger),
-      pidManager(pidManager), fermentationProgram(pidManager),
+      pidManager(pidManager), fermentationProgram(pidManager, volumeManager),
       testRunning(false), startTime(0) {}
 
 void StateMachine::update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
@@ -87,7 +87,9 @@ void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& 
     stirringMotor.control(false, 0);
     heatingPlate.control(false);
     ledGrowLight.control(false);
-    extern bool stopFlag;
+    pidManager.stopTemperaturePID();
+    pidManager.stopPHPID();
+    pidManager.stopDOPID();
     stopAllTests();
     currentState = ProgramState::IDLE;
     currentProgram = "None";
@@ -117,6 +119,45 @@ bool StateMachine::isTestRunning() const {
     return testRunning;
 }
 
+void StateMachine::startTemperaturePID(double setpoint) {
+    logger.logInfo("Starting Temperature PID control...");
+    pidManager.startTemperaturePID(setpoint);
+    currentState = ProgramState::RUNNING;
+    currentProgram = "Temperature PID";
+}
+
+void StateMachine::startPHPID(double setpoint) {
+    logger.logInfo("Starting pH PID control...");
+    pidManager.startPHPID(setpoint);
+    currentState = ProgramState::RUNNING;
+    currentProgram = "pH PID";
+}
+
+void StateMachine::startDOPID(double setpoint) {
+    logger.logInfo("Starting DO PID control...");
+    pidManager.startDOPID(setpoint);
+    currentState = ProgramState::RUNNING;
+    currentProgram = "DO PID";
+}
+
+void StateMachine::stopTemperaturePID() {
+    logger.logInfo("Stopping Temperature PID control...");
+    pidManager.stopTemperaturePID();
+    updateStateAndProgram();
+}
+
+void StateMachine::stopPHPID() {
+    logger.logInfo("Stopping pH PID control...");
+    pidManager.stopPHPID();
+    updateStateAndProgram();
+}
+
+void StateMachine::stopDOPID() {
+    logger.logInfo("Stopping DO PID control...");
+    pidManager.stopDOPID();
+    updateStateAndProgram();
+}
+
 void StateMachine::updateStateAndProgram() {
     if (drainProgram.isRunning()) {
         currentProgram = "Drain";
@@ -130,6 +171,9 @@ void StateMachine::updateStateAndProgram() {
     } else if (fermentationProgram.isRunning()) {
         currentProgram = "Fermentation";
         currentState = ProgramState::RUNNING;
+    } else if (pidManager.isTestRunning()) {
+        currentProgram = "PID Test";
+        currentState = ProgramState::RUNNING;
     } else {
         currentProgram = "None";
         currentState = ProgramState::IDLE;
@@ -138,7 +182,8 @@ void StateMachine::updateStateAndProgram() {
     // Check if any program has just completed
     if (currentState == ProgramState::RUNNING && 
         !drainProgram.isRunning() && !mixProgram.isRunning() && 
-        !testProgram.isRunning() && !fermentationProgram.isRunning()) {
+        !testProgram.isRunning() && !fermentationProgram.isRunning() &&
+        !pidManager.isTestRunning()) {
         currentState = ProgramState::COMPLETED;
         logger.logInfo("Program completed: " + currentProgram);
     }

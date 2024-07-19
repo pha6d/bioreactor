@@ -1,13 +1,7 @@
-/*
- * FermentationProgram.cpp
- * This file implements the FermentationProgram class defined in FermentationProgram.h.
- * It manages the fermentation process, including sensor readings, PID control, and actuator adjustments.
- */
-
 #include "FermentationProgram.h"
 
-FermentationProgram::FermentationProgram(PIDManager& pidManager)
-    : pidManager(pidManager), running(false) {}
+FermentationProgram::FermentationProgram(PIDManager& pidManager, VolumeManager& volumeManager)
+    : pidManager(pidManager), volumeManager(volumeManager), running(false), paused(false), totalPauseTime(0) {}
 
 void FermentationProgram::begin(DCPump& airPump, DCPump& drainPump, 
                PeristalticPump& nutrientPump, PeristalticPump& basePump, 
@@ -47,13 +41,15 @@ void FermentationProgram::begin(DCPump& airPump, DCPump& drainPump,
     this->comment = comment;
 
     // Initialize PID setpoints
-    pidManager.setTemperatureSetpoint(tempSetpoint);
-    pidManager.setPHSetpoint(phSetpoint);
-    pidManager.setDOSetpoint(doSetpoint);
+    pidManager.startTemperaturePID(tempSetpoint);
+    pidManager.startPHPID(phSetpoint);
+    pidManager.startDOPID(doSetpoint);
 
     // Start the fermentation process
     startTime = millis();
     running = true;
+    paused = false;
+    totalPauseTime = 0;
 
     // Initialize actuators
     airPump.control(true, 50);  // Example: Start air pump at 50% speed
@@ -64,7 +60,7 @@ void FermentationProgram::begin(DCPump& airPump, DCPump& drainPump,
 }
 
 void FermentationProgram::update() {
-    if (!running) return;
+    if (!running || paused) return;
 
     if (stopFlag) {
         stop();
@@ -73,6 +69,7 @@ void FermentationProgram::update() {
 
     updateSensors();
     applyPIDOutputs();
+    updateVolume();
     checkCompletion();
 }
 
@@ -81,7 +78,9 @@ void FermentationProgram::updateSensors() {
     double phValue = phSensor->readValue();
     double doValue = oxygenSensor->readValue();
     
-    pidManager.updateAll(tempValue, phValue, doValue);
+    pidManager.updateTemperaturePID(tempValue);
+    pidManager.updatePHPID(phValue);
+    pidManager.updateDOPID(doValue);
 }
 
 void FermentationProgram::applyPIDOutputs() {
@@ -105,11 +104,17 @@ void FermentationProgram::applyPIDOutputs() {
 
     // Adjust stirring speed based on the maximum of the three outputs
     int stirringSpeed = static_cast<int>(max(max(abs(tempOutput), abs(phOutput)), abs(doOutput)));
-    stirringMotor->control(true, stirringSpeed);
+    stirringMotor->control(true, max(stirringSpeed, 100)); // Use a minimum speed of 100
+}
+
+void FermentationProgram::updateVolume() {
+    volumeManager.updateVolume();
 }
 
 void FermentationProgram::checkCompletion() {
-    if (millis() - startTime >= static_cast<unsigned long>(duration) * 1000UL) {
+    unsigned long currentTime = millis();
+    unsigned long elapsedTime = currentTime - startTime - totalPauseTime;
+    if (elapsedTime >= static_cast<unsigned long>(duration) * 1000UL) {
         stop();
         Serial.println("Fermentation completed.");
     }
@@ -121,6 +126,7 @@ bool FermentationProgram::isRunning() const {
 
 void FermentationProgram::stop() {
     running = false;
+    paused = false;
 
     // Stop all actuators
     airPump->control(false, 0);
@@ -131,5 +137,46 @@ void FermentationProgram::stop() {
     heatingPlate->control(false);
     ledGrowLight->control(false);
 
+    // Stop PID controllers
+    pidManager.stopTemperaturePID();
+    pidManager.stopPHPID();
+    pidManager.stopDOPID();
+
     Serial.println("Fermentation stopped.");
+}
+
+void FermentationProgram::pause() {
+    if (!running || paused) return;
+
+    paused = true;
+    pauseStartTime = millis();
+
+    // Maintain minimum stirring speed and temperature
+    stirringMotor->control(true, 30);  // Example: Set to 30% speed
+    heatingPlate->controlWithPID(pidManager.getTemperatureOutput());
+
+    // Stop other actuators
+    airPump->control(false, 0);
+    drainPump->control(false, 0);
+    nutrientPump->control(false, 0);
+    basePump->control(false, 0);
+
+    Serial.println("Fermentation paused.");
+}
+
+void FermentationProgram::resume() {
+    if (!running || !paused) return;
+
+    paused = false;
+    totalPauseTime += millis() - pauseStartTime;
+
+    // Resume normal operation of actuators
+    airPump->control(true, 50);  // Example: Resume air pump at 50% speed
+    applyPIDOutputs();  // This will resume normal control of all actuators
+
+    Serial.println("Fermentation resumed.");
+}
+
+bool FermentationProgram::isPaused() const {
+    return paused;
 }

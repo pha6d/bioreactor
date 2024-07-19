@@ -46,7 +46,6 @@ void ActuatorController::runActuator(const String& actuatorName, float value, in
 }
 
 void ActuatorController::executeActuator(const String& command) {
-    // Parsing the command
     int firstSpace = command.indexOf(' ');
     int secondSpace = command.indexOf(' ', firstSpace + 1);
     
@@ -61,6 +60,42 @@ void ActuatorController::executeActuator(const String& command) {
     }
 }
 
+void ActuatorController::update() {
+    if (testRunning) {
+        if (millis() - testStartTime >= testDuration * 1000UL || stopFlag) {
+            stopAllActuators();
+            Serial.println("Test of " + currentActuator + " completed or stopped");
+        }
+    }
+}
+
+void ActuatorController::stopAllActuators() {
+    basePump.control(false, 0);
+    nutrientPump.control(false, 0);
+    airPump.control(false, 0);
+    drainPump.control(false, 0);
+    stirringMotor.control(false, 0);
+    heatingPlate.control(false);
+    ledGrowLight.control(false);
+    testRunning = false;
+    currentActuator = "";
+    Serial.println("All actuators stopped");
+}
+
+bool ActuatorController::isTestRunning() {
+    return testRunning;
+}
+
+void ActuatorController::logActuatorOperation(const String& actuatorName, float value, int duration) {
+    Serial.println("Running " + actuatorName + " at value " + String(value) + " for " + String(duration) + " seconds");
+}
+
+void ActuatorController::emergencyStop() {
+    stopAllActuators();
+    Serial.println("Emergency stop initiated. All actuators stopped.");
+}
+
+// The following methods are not used in the current implementation but are kept for potential future use
 void ActuatorController::runPeristalticPump(PeristalticPump& pump, float flowRate, int duration) {
     logActuatorOperation(pump.getName(), flowRate, duration);
     pump.control(true, flowRate);
@@ -99,34 +134,4 @@ void ActuatorController::runLEDGrowLight(LEDGrowLight& light, int intensity, int
     delay(duration * 1000);
     light.control(false, 0);
     Serial.println("Operation completed");
-}
-
-void ActuatorController::logActuatorOperation(const String& actuatorName, float value, int duration) {
-    Serial.println("Running " + actuatorName + " at value " + String(value) + " for " + String(duration) + " seconds");
-}
-
-void ActuatorController::update() {
-    if (testRunning) {
-        if (millis() - testStartTime >= testDuration * 1000UL || stopFlag) {
-            stopAllActuators();
-            Serial.println("Test of " + currentActuator + " completed or stopped");
-        }
-    }
-}
-
-void ActuatorController::stopAllActuators() {
-    basePump.control(false, 0);
-    nutrientPump.control(false, 0);
-    airPump.control(false, 0);
-    drainPump.control(false, 0);
-    stirringMotor.control(false, 0);
-    heatingPlate.control(false);
-    ledGrowLight.control(false);
-    testRunning = false;
-    currentActuator = "";
-    Serial.println("All actuators stopped");
-}
-
-bool ActuatorController::isTestRunning() {
-    return testRunning;
 }

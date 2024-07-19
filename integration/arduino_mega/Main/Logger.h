@@ -33,11 +33,16 @@ public:
         float baseConc, const String& experimentName, const String& comment);
 
     static void logAlert(const String& message, AlertLevel level);
-
-    // Nouvelles méthodes (ne seront pas envoyées à l'ESP pour le moment)
     static void logInfo(const String& message);
     static void logWarning(const String& message);
     static void logError(const String& message);
+
+    // New methods for detailed logging
+    static void logFermentationData(float waterTemp, float airTemp, float pH, float turbidity, float oxygenLevel, float airFlow,
+                                    float tempSetpoint, float phSetpoint, float doSetpoint,
+                                    float tempOutput, float phOutput, float doOutput);
+    
+    static void logPIDData(const String& pidType, float setpoint, float input, float output);
 
 private:
     static bool isValidData(float wTemp, float aTemp, float pH, float turb, float oxy, float aflow);

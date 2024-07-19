@@ -3,60 +3,88 @@
 
 #include <PID_v1.h>
 #include "StirringMotor.h"
+#include "HeatingPlate.h"
+#include "PeristalticPump.h"
+#include "DCPump.h"
+#include "PT100Sensor.h"
+#include "PHSensor.h"
+#include "OxygenSensor.h"
+
+extern bool stopFlag;
 
 class PIDManager {
 public:
-    PIDManager(StirringMotor& stirringMotor);
+    // Constructor
+    PIDManager(StirringMotor* stirringMotor, HeatingPlate* heatingPlate);
     
-    // Initialize PID controllers with given parameters
+    // Initialize PID controllers
     void initialize(double tempKp, double tempKi, double tempKd,
                     double phKp, double phKi, double phKd,
                     double doKp, double doKi, double doKd);
-    
-    // Update all PID controllers with new input values
+
+    // Update all PID controllers
     void updateAll(double tempInput, double phInput, double doInput);
-    
-    // Getters for PID outputs
-    double getTemperatureOutput() const;
-    double getPHOutput() const;
-    double getDOOutput() const;
-    
-    // Setters for PID setpoints
+
+    // Set setpoints for each PID
     void setTemperatureSetpoint(double setpoint);
     void setPHSetpoint(double setpoint);
     void setDOSetpoint(double setpoint);
-    
-    // Methods for PID testing
+
+    // Get outputs from each PID
+    double getTemperatureOutput() const;
+    double getPHOutput() const;
+    double getDOOutput() const;
+
+    // Test-related methods
     void startTest(const String& type);
     void updateTest();
     void stopTest();
     bool isTestRunning() const;
-    
-    // Method to adjust stirring speed based on PID outputs and minimum speed
+
+    // Adjust stirring speed based on PID outputs
     void adjustStirringSpeed(int minSpeed);
-    
-    // Method to start/stop the PID manager
-    void start() { running = true; }
-    void stop() { running = false; }
+
+    // Check if stop flag is set
+    void checkStopFlag();
+
+    // New methods for individual PID control
+    void startTemperaturePID(double setpoint);
+    void startPHPID(double setpoint);
+    void startDOPID(double setpoint);
+    void updateTemperaturePID(double input);
+    void updatePHPID(double input);
+    void updateDOPID(double input);
+    void stopTemperaturePID();
+    void stopPHPID();
+    void stopDOPID();
 
 private:
+    // PID controllers
     PID tempPID;
     PID phPID;
     PID doPID;
+
+    // PID variables
     double tempInput, tempOutput, tempSetpoint;
     double phInput, phOutput, phSetpoint;
     double doInput, doOutput, doSetpoint;
-    StirringMotor& stirringMotor;
 
+    // Actuators
+    StirringMotor* stirringMotor;
+    HeatingPlate* heatingPlate;
+
+    // Test variables
     bool testRunning;
     String testType;
     unsigned long lastTestUpdate;
     static const unsigned long TEST_INTERVAL = 1000; // 1 second
 
-    bool running;  // Flag to indicate if the PID manager is running
-    bool stopFlag; // Flag to stop the PID manager
+    // New variables for individual PID control
+    bool tempPIDRunning;
+    bool phPIDRunning;
+    bool doPIDRunning;
 
-    // Helper method to log PID values during testing
+    // Helper method to log PID values
     void logPIDValues(const String& type, double setpoint, double input, double output);
 };
 

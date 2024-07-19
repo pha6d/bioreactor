@@ -4,13 +4,14 @@
 
 HardwareSerial& espSerial = Serial1;
 
-
 bool Logger::isValidData(float wTemp, float aTemp, float pH, float turb, float oxy, float aflow) {
-    return true; // Simplification, toujours retourne vrai
+    // Implement data validation logic here
+    return true;
 }
 
 bool Logger::areStatusesValid(int apStat, int dpStat, int npStat, int bpStat, int smStat, int hpStat, int lgStat) {
-    return true; // Simplification, toujours retourne vrai
+    // Implement status validation logic here
+    return true;
 }
 
 void Logger::logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, PeristalticPump& basePump,
@@ -35,7 +36,7 @@ void Logger::logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrie
     int lgStat = ledGrowLight.isOn() ? 1 : 0;
 
     if (isValidData(wTemp, aTemp, pH, turb, oxy, aflow) && areStatusesValid(apStat, dpStat, npStat, bpStat, smStat, hpStat, lgStat)) {
-        DynamicJsonDocument doc(2048);
+        StaticJsonDocument<2048> doc;
 
         doc["program"] = currentProgram;
         doc["status"] = programStatus;
@@ -50,15 +51,15 @@ void Logger::logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrie
         doc["airTemp"] = aTemp;
         doc["pH"] = pH;
         doc["turbidity"] = turb;
-        doc["oxyden"] = oxy;
+        doc["oxygen"] = oxy;
         doc["airFlow"] = aflow;
 
         String data;
         serializeJson(doc, data);
-        data += "\n"; // Ajout d'un caractère de fin de ligne
+        data += "\n";
 
-        espSerial.println(data); // Envoi des données au format JSON via Serial1
-        Serial.println(data); // Affichage des données pour débogage
+        espSerial.println(data);
+        Serial.println(data);
     }
     else {
         Serial.println("Invalid sensor data or status detected.");
@@ -69,7 +70,7 @@ void Logger::logStartupParameters(const String& programType, int rateOrSpeed, in
     float tempSetpoint, float phSetpoint, float doSetpoint, float nutrientConc,
     float baseConc, const String& experimentName, const String& comment) {
 
-    DynamicJsonDocument doc(2048);
+    StaticJsonDocument<2048> doc;
 
     doc["ev"] = "startup";
     doc["pt"] = programType;
@@ -85,20 +86,19 @@ void Logger::logStartupParameters(const String& programType, int rateOrSpeed, in
 
     String data;
     serializeJson(doc, data);
-    data += "\n"; // Ajout d'un caractère de fin de ligne
+    data += "\n";
 
-    espSerial.println(data); // Envoi des données au format JSON via Serial1
-    Serial.println(data); // Affichage des données pour débogage
+    espSerial.println(data);
+    Serial.println(data);
 }
 
 void Logger::logAlert(const String& message, AlertLevel level) {
     String levelStr = (level == AlertLevel::WARNING) ? "WARNING" : "ALARM";
     String alertMessage = levelStr + ": " + message;
     Serial.println(alertMessage);
-    // Vous pouvez ajouter ici l'envoi de l'alerte à l'ESP32 si nécessaire
+    // You can add here the logic to send the alert to the ESP32 if needed
 }
 
-// Nouvelles méthodes (ne seront pas envoyées à l'ESP pour le moment)
 void Logger::logInfo(const String& message) {
     Serial.println("INFO: " + message);
 }
@@ -109,4 +109,48 @@ void Logger::logWarning(const String& message) {
 
 void Logger::logError(const String& message) {
     Serial.println("ERROR: " + message);
+}
+
+void Logger::logFermentationData(float waterTemp, float airTemp, float pH, float turbidity, float oxygenLevel, float airFlow,
+                                 float tempSetpoint, float phSetpoint, float doSetpoint,
+                                 float tempOutput, float phOutput, float doOutput) {
+    StaticJsonDocument<2048> doc;
+
+    doc["ev"] = "fermentation";
+    doc["wTemp"] = waterTemp;
+    doc["aTemp"] = airTemp;
+    doc["pH"] = pH;
+    doc["turb"] = turbidity;
+    doc["oxy"] = oxygenLevel;
+    doc["airFlow"] = airFlow;
+    doc["tSet"] = tempSetpoint;
+    doc["phSet"] = phSetpoint;
+    doc["doSet"] = doSetpoint;
+    doc["tOut"] = tempOutput;
+    doc["phOut"] = phOutput;
+    doc["doOut"] = doOutput;
+
+    String data;
+    serializeJson(doc, data);
+    data += "\n";
+
+    espSerial.println(data);
+    Serial.println(data);
+}
+
+void Logger::logPIDData(const String& pidType, float setpoint, float input, float output) {
+    StaticJsonDocument<2048> doc;
+
+    doc["ev"] = "pid";
+    doc["type"] = pidType;
+    doc["set"] = setpoint;
+    doc["in"] = input;
+    doc["out"] = output;
+
+    String data;
+    serializeJson(doc, data);
+    data += "\n";
+
+    espSerial.println(data);
+    Serial.println(data);
 }

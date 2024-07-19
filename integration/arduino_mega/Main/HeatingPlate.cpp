@@ -25,11 +25,19 @@ bool HeatingPlate::isOn() const {
 }
 
 void HeatingPlate::controlWithPID(double pidOutput) {
+    int percentPower = map(pidOutput, 0, 255, 0, 100);
+    
+    // Add a ramp to avoid abrupt changes
+    int powerDiff = percentPower - _lastPercentPower;
+    int maxChange = 5; // Limit change to 5% per cycle
+    percentPower = _lastPercentPower + constrain(powerDiff, -maxChange, maxChange);
+    
     if (_isPWMCapable) {
-        controlPWM(static_cast<int>(pidOutput));
+        controlPWM(percentPower);
     } else {
-        controlWithCycle(pidOutput);
+        controlWithCycle(percentPower);
     }
+    _lastPercentPower = percentPower;
 }
 
 void HeatingPlate::controlPWM(int value) {
@@ -51,8 +59,8 @@ void HeatingPlate::controlOnOff(bool state) {
     Serial.println(status ? " is ON" : " is OFF");
 }
 
-void HeatingPlate::controlWithCycle(double pidOutput) {
-    dutyCycle = constrain(pidOutput / 255.0, 0, 1);
+void HeatingPlate::controlWithCycle(double percentPower) {
+    dutyCycle = percentPower / 100.0;
     unsigned long now = millis();
     if (now - lastCycleStart >= cycleTime) {
         lastCycleStart = now;
@@ -64,4 +72,6 @@ void HeatingPlate::controlWithCycle(double pidOutput) {
         digitalWrite(_relayPin, LOW);
         status = false;
     }
+    Serial.print(_id);
+    Serial.println(" Duty Cycle: " + String(dutyCycle * 100) + "%");
 }

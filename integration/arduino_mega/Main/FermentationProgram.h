@@ -1,9 +1,3 @@
-/*
- * FermentationProgram.h
- * This file defines the FermentationProgram class which manages the fermentation process.
- * It coordinates actuators, sensors, and PID control for the bioreactor.
- */
-
 #ifndef FERMENTATION_PROGRAM_H
 #define FERMENTATION_PROGRAM_H
 
@@ -20,29 +14,34 @@
 #include "TurbiditySensor.h"
 #include "OxygenSensor.h"
 #include "AirFlowSensor.h"
+#include "VolumeManager.h"
 
 extern bool stopFlag;
 
 class FermentationProgram {
 public:
-    FermentationProgram(PIDManager& pidManager);
+    FermentationProgram(PIDManager& pidManager, VolumeManager& volumeManager);
 
-    void begin(DCPump& airPump, DCPump& drainPump, 
-               PeristalticPump& nutrientPump, PeristalticPump& basePump, 
+    void begin(DCPump& airPump, DCPump& drainPump,
+               PeristalticPump& nutrientPump, PeristalticPump& basePump,
                StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-               PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor, 
-               PHSensor& phSensor, TurbiditySensor& turbiditySensor, 
+               PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
+               PHSensor& phSensor, TurbiditySensor& turbiditySensor,
                OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
-               float tempSetpoint, float phSetpoint, float doSetpoint, 
-               float nutrientConc, float baseConc, int duration, 
+               float tempSetpoint, float phSetpoint, float doSetpoint,
+               float nutrientConc, float baseConc, int duration,
                const String& experimentName, const String& comment);
 
     void update();
     bool isRunning() const;
     void stop();
+    void pause();
+    void resume();
+    bool isPaused() const;
 
 private:
     PIDManager& pidManager;
+    VolumeManager& volumeManager;
 
     // Actuators
     DCPump* airPump;
@@ -71,10 +70,14 @@ private:
     String comment;
 
     unsigned long startTime;
+    unsigned long pauseStartTime;
+    unsigned long totalPauseTime;
     bool running;
+    bool paused;
 
     void updateSensors();
     void applyPIDOutputs();
+    void updateVolume();
     void checkCompletion();
 };
 

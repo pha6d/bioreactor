@@ -14,7 +14,8 @@ public:
     static void executeActuator(const String& command);
     static void stopAllActuators();
     static bool isTestRunning();
-    static void update();  
+    static void update();
+    static void emergencyStop();
 
 private:
     static void runPeristalticPump(PeristalticPump& pump, float flowRate, int duration);

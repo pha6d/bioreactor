@@ -17,6 +17,7 @@
 #include "TestActuatorsProgram.h"
 #include "FermentationProgram.h"
 #include "Logger.h"
+#include "PIDManager.h"
 
 // Enum to represent different states of the bioreactor
 enum class ProgramState {
@@ -30,7 +31,7 @@ enum class ProgramState {
 class StateMachine {
 public:
     // Constructor
-    StateMachine(Logger& logger, PIDManager& pidManager);
+    StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager& volumeManager);
 
     // Main update function to be called in the loop
     void update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
@@ -56,6 +57,14 @@ public:
                            float nutrientConc, float baseConc, int duration,
                            const String& experimentName, const String& comment);
 
+    // New functions for individual PID control
+    void startTemperaturePID(double setpoint);
+    void startPHPID(double setpoint);
+    void startDOPID(double setpoint);
+    void stopTemperaturePID();
+    void stopPHPID();
+    void stopDOPID();
+
     // Function to stop all processes
     void stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
                  PeristalticPump& basePump, StirringMotor& stirringMotor,
@@ -76,6 +85,7 @@ private:
     ProgramState currentState;
     String currentProgram;
     Logger& logger;
+    VolumeManager& volumeManager;
 
     // Program objects
     DrainProgram drainProgram;

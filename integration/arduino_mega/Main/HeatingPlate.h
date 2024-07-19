@@ -57,6 +57,7 @@ private:
     void controlPWM(int value);
     void controlOnOff(bool state);
     void controlWithCycle(double pidOutput);
+    int _lastPercentPower = 0;
 };
 
 #endif
