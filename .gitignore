@@ -5,6 +5,7 @@ integration/ESP32/config.h
 development/camera/ESP32-CAM/config.h
 integration/ESP8266/phototrophic_bioreactor_ESP8266/config.h
 integration/ESP32-S3/config.h
+development/wifi_communication/RangeExtender_NAPT_ESP8266/config.h
 
 
 # Exclude specific images in docs
