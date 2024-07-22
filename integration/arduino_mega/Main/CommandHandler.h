@@ -13,7 +13,14 @@
 class CommandHandler {
 public:
     CommandHandler(StateMachine& stateMachine, SafetySystem& safetySystem, 
-                   VolumeManager& volumeManager, Logger& logger);
+                   VolumeManager& volumeManager, Logger& logger,
+                   DCPump& airPump, DCPump& drainPump, 
+                   PeristalticPump& nutrientPump, PeristalticPump& basePump,
+                   StirringMotor& stirringMotor, HeatingPlate& heatingPlate, 
+                   LEDGrowLight& ledGrowLight, PT100Sensor& waterTempSensor, 
+                   DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor, 
+                   TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, 
+                   AirFlowSensor& airFlowSensor, PIDManager& pidManager);
 
     // Execute a command received from the user
     void executeCommand(const String& command);
@@ -26,6 +33,20 @@ private:
     SafetySystem& safetySystem;
     VolumeManager& volumeManager;
     Logger& logger;
+    DCPump& airPump;
+    DCPump& drainPump;
+    PeristalticPump& nutrientPump;
+    PeristalticPump& basePump;
+    StirringMotor& stirringMotor;
+    HeatingPlate& heatingPlate;
+    LEDGrowLight& ledGrowLight;
+    PT100Sensor& waterTempSensor;
+    DS18B20TemperatureSensor& airTempSensor;
+    PHSensor& phSensor;
+    TurbiditySensor& turbiditySensor;
+    OxygenSensor& oxygenSensor;
+    AirFlowSensor& airFlowSensor;
+    PIDManager& pidManager;
 
     // Helper method to parse fermentation parameters
     void parseFermentationParams(const String& command, float& tempSetpoint, float& phSetpoint, 

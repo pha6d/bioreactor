@@ -3,9 +3,23 @@
 #include "CommandHandler.h"
 
 CommandHandler::CommandHandler(StateMachine& stateMachine, SafetySystem& safetySystem, 
-                               VolumeManager& volumeManager, Logger& logger)
+                               VolumeManager& volumeManager, Logger& logger,
+                               DCPump& airPump, DCPump& drainPump, 
+                               PeristalticPump& nutrientPump, PeristalticPump& basePump,
+                               StirringMotor& stirringMotor, HeatingPlate& heatingPlate, 
+                               LEDGrowLight& ledGrowLight, PT100Sensor& waterTempSensor, 
+                               DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor, 
+                               TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, 
+                               AirFlowSensor& airFlowSensor, PIDManager& pidManager)
     : stateMachine(stateMachine), safetySystem(safetySystem), 
-      volumeManager(volumeManager), logger(logger) {}
+      volumeManager(volumeManager), logger(logger),
+      airPump(airPump), drainPump(drainPump), 
+      nutrientPump(nutrientPump), basePump(basePump),
+      stirringMotor(stirringMotor), heatingPlate(heatingPlate), 
+      ledGrowLight(ledGrowLight), waterTempSensor(waterTempSensor), 
+      airTempSensor(airTempSensor), phSensor(phSensor), 
+      turbiditySensor(turbiditySensor), oxygenSensor(oxygenSensor), 
+      airFlowSensor(airFlowSensor), pidManager(pidManager) {}
 
 void CommandHandler::executeCommand(const String& command) {
     logger.logInfo("Executing command: " + command);
@@ -13,43 +27,47 @@ void CommandHandler::executeCommand(const String& command) {
     if (command.equalsIgnoreCase("help")) {
         printHelp();
     } else if (command.startsWith("test ")) {
-        String testCommand = command.substring(5);  // Remove "test " from the beginning
+        String testCommand = command.substring(5); 
         ActuatorController::executeActuator(testCommand);
     } else if (command.equalsIgnoreCase("tests")) {
         logger.logInfo("Starting tests...");
-        // Implement the test start logic here
+        stateMachine.startTests(airPump, drainPump, stirringMotor, nutrientPump, basePump, heatingPlate, ledGrowLight,
+                            waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
     } else if (command.startsWith("drain")) {
         logger.logInfo("Starting drain...");
         int spaceIndex1 = command.indexOf(' ');
         int spaceIndex2 = command.indexOf(' ', spaceIndex1 + 1);
         int rate = command.substring(spaceIndex1 + 1, spaceIndex2).toInt();
         int duration = command.substring(spaceIndex2 + 1).toInt();
-        // Implement drain start logic here
+        stateMachine.startDrain(drainPump, rate, duration);
     } else if (command.equalsIgnoreCase("stop")) {
         logger.logInfo("Stopping all...");
-        // Implement stop all logic here
+        stateMachine.stopAll(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
     } else if (command.startsWith("mix")) {
         logger.logInfo("Starting mix...");
         int spaceIndex = command.indexOf(' ');
         int speed = command.substring(spaceIndex + 1).toInt();
-        // Implement mix start logic here
+        stateMachine.startMix(stirringMotor, speed);
     } else if (command.startsWith("fermentation")) {
         logger.logInfo("Starting fermentation...");
         float tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc;
         int duration;
         String experimentName, comment;
         parseFermentationParams(command, tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, experimentName, comment);
-        // Implement fermentation start logic here
+        stateMachine.startFermentation(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
+                                       waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
+                                       tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, 
+                                       experimentName, comment);
     } else if (command.startsWith("pid ")) {
         String pidType = command.substring(4, 8);  // Extract PID type (temp, ph, or do)
         float setpoint = command.substring(9).toFloat();  // Extract setpoint
         
         if (pidType == "temp") {
-            // Implement temperature PID start logic
+            pidManager.startTest("temp");
         } else if (pidType == "ph") {
-            // Implement pH PID start logic
+            pidManager.startTest("ph");
         } else if (pidType == "do") {
-            // Implement DO PID start logic
+            pidManager.startTest("do");
         } else {
             logger.logWarning("Unknown PID type: " + pidType);
         }
@@ -91,6 +109,7 @@ void CommandHandler::executeCommand(const String& command) {
 }
 
 void CommandHandler::printHelp() {
+    Serial.println();
     Serial.println("Available commands:");
     Serial.println("help - Display this help message");
     Serial.println("test <actuator> <value> <duration> - Test a specific actuator");

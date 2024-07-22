@@ -83,7 +83,12 @@ FermentationProgram fermentationProgram(pidManager, volumeManager);
 Logger logger;
 SafetySystem safetySystem(1.0, 0.95, 0.1); // totalVolume, maxVolumePercent, minVolume
 StateMachine stateMachine(logger, pidManager, volumeManager);
-CommandHandler commandHandler(stateMachine, safetySystem, volumeManager, logger);
+CommandHandler commandHandler(stateMachine, safetySystem, volumeManager, logger,
+                              airPump, drainPump, nutrientPump, basePump,
+                              stirringMotor, heatingPlate, ledGrowLight,
+                              waterTempSensor, airTempSensor, phSensor,
+                              turbiditySensor, oxygenSensor, airFlowSensor,
+                              pidManager);
 
 // Declare global variables
 bool stopFlag = false;
