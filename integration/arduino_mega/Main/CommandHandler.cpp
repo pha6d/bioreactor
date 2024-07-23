@@ -110,17 +110,28 @@ void CommandHandler::executeCommand(const String& command) {
 
 void CommandHandler::printHelp() {
     Serial.println();
+    Serial.println("------ Available commands: ------");
+    Serial.println("help - Display this help message");
+    Serial.println("test <actuator> <value> <duration> - Test a specific actuator");
     Serial.println("Available commands:");
     Serial.println("help - Display this help message");
     Serial.println("test <actuator> <value> <duration> - Test a specific actuator");
     Serial.println("  Available actuators:");
-    Serial.println("    basePump <flow_rate_ml_per_min> <duration_seconds>");
-    Serial.println("    nutrientPump <flow_rate_ml_per_min> <duration_seconds>");
-    Serial.println("    airPump <speed_0_255> <duration_seconds>");
-    Serial.println("    drainPump <speed_0_255> <duration_seconds>");
-    Serial.println("    stirringMotor <speed_0_255> <duration_seconds>");
-    Serial.println("    heatingPlate <temperature_celsius> <duration_seconds>");
-    Serial.println("    ledGrowLight <intensity_0_255> <duration_seconds>");
+    Serial.print("    basePump <flow_rate_0_");
+    Serial.print(basePump.getMaxFlowRate(), 1);  // 1 decimal place
+    Serial.println("_ml_per_min> <duration_seconds>");
+    Serial.print("    nutrientPump <flow_rate_0_");
+    Serial.print(nutrientPump.getMaxFlowRate(), 1);  // 1 decimal place
+    Serial.println("_ml_per_min> <duration_seconds>");
+    Serial.println("    airPump <speed_0_100> <duration_seconds>");
+    Serial.println("    drainPump <speed_0_100> <duration_seconds>");
+    Serial.print("    stirringMotor <speed_");
+    Serial.print(stirringMotor.getMinRPM());
+    Serial.print("_");
+    Serial.print(stirringMotor.getMaxRPM());
+    Serial.println("> <duration_seconds>");
+    Serial.println("    heatingPlate <power_0_100> <duration_seconds>");
+    Serial.println("    ledGrowLight <intensity_0_100> <duration_seconds>");
     Serial.println("tests - Run all predefined tests");
     Serial.println("drain <rate> <duration> - Start draining");
     Serial.println("stop - Stop all actuators and PIDs");

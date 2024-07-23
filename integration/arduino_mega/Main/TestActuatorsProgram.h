@@ -22,7 +22,7 @@ public:
                PHSensor& phSensor, TurbiditySensor& turbiditySensor,
                OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor);
     void update();
-    bool isRunning() const;
+    bool isRunning();
 
 private:
     DCPump* airPump;

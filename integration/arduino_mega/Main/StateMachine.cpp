@@ -56,7 +56,7 @@ void StateMachine::startTests(DCPump& airPump, DCPump& drainPump, StirringMotor&
                       waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
     currentState = ProgramState::RUNNING;
     currentProgram = "Tests";
-    testRunning = true;
+    //testRunning = true;
 }
 
 void StateMachine::startFermentation(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, 
@@ -87,12 +87,15 @@ void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& 
     stirringMotor.control(false, 0);
     heatingPlate.control(false);
     ledGrowLight.control(false);
+
     pidManager.stopTemperaturePID();
     pidManager.stopPHPID();
     pidManager.stopDOPID();
-    stopAllTests();
+    //stopAllTests();
     currentState = ProgramState::IDLE;
     currentProgram = "None";
+    
+    stopFlag = true;
 }
 
 String StateMachine::getCurrentProgram() const {
@@ -110,10 +113,10 @@ String StateMachine::getCurrentStatus() const {
     }
 }
 
-void StateMachine::stopAllTests() {
-    testRunning = false;
-    logger.logInfo("All tests stopped.");
-}
+//void StateMachine::stopAllTests() {
+//    testRunning = false;
+//    logger.logInfo("All tests stopped.");
+//}
 
 bool StateMachine::isTestRunning() const {
     return testRunning;

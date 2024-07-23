@@ -18,8 +18,8 @@
 #include "FermentationProgram.h"
 #include "Logger.h"
 #include "PIDManager.h"
+#include "VolumeManager.h"
 
-// Enum to represent different states of the bioreactor
 enum class ProgramState {
     IDLE,
     RUNNING,
@@ -30,15 +30,12 @@ enum class ProgramState {
 
 class StateMachine {
 public:
-    // Constructor
     StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager& volumeManager);
 
-    // Main update function to be called in the loop
     void update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
                 PeristalticPump& basePump, StirringMotor& stirringMotor,
                 HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight);
 
-    // Functions to start different programs
     void startDrain(DCPump& drainPump, int rate, int duration);
     void startMix(StirringMotor& stirringMotor, int speed);
     void startTests(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor, 
@@ -57,29 +54,18 @@ public:
                            float nutrientConc, float baseConc, int duration,
                            const String& experimentName, const String& comment);
 
-    // New functions for individual PID control
     void startTemperaturePID(double setpoint);
     void startPHPID(double setpoint);
     void startDOPID(double setpoint);
-    void stopTemperaturePID();
-    void stopPHPID();
-    void stopDOPID();
-
-    // Function to stop all processes
+    
+    void stopCurrentProgram();
     void stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
                  PeristalticPump& basePump, StirringMotor& stirringMotor,
                  HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight);
 
-    // Functions to get current state information
     String getCurrentProgram() const;
     String getCurrentStatus() const;
     ProgramState getState() const { return currentState; }
-
-    // Function to stop all tests
-    void stopAllTests();
-
-    // Function to check if a test is running
-    bool isTestRunning() const;
 
 private:
     ProgramState currentState;
@@ -87,17 +73,14 @@ private:
     Logger& logger;
     VolumeManager& volumeManager;
 
-    // Program objects
     DrainProgram drainProgram;
     MixProgram mixProgram;
     TestActuatorsProgram testProgram;
     PIDManager& pidManager;
     FermentationProgram fermentationProgram;
 
-    bool testRunning;
     unsigned long startTime;
 
-    // Private helper function to update state and program
     void updateStateAndProgram();
 };
 

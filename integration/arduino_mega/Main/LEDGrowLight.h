@@ -1,7 +1,7 @@
 /*
  * LEDGrowLight.h
  * This file defines a class for controlling a LED grow light.
- * The class implements the ActuatorInterface and provides methods to turn the LED grow light on or off.
+ * The class implements the ActuatorInterface and provides methods to turn the LED grow light on or off and control its intensity.
  *
  * Physical modules used:
  * - Relay module connected to the LED grow light
@@ -28,7 +28,7 @@ public:
     /*
      * Method to control the LED grow light.
      * @param state: Boolean indicating whether the LED grow light should be on or off.
-     * @param value: Not used in this implementation.
+     * @param value: Intensity percentage (0-100).
      */
     void control(bool state, int value = 0) override;
 
@@ -43,7 +43,8 @@ public:
 private:
     int _relayPin;   // Relay pin
     const char* _id; // Identifier for the LED grow light
-    bool status; // Track the state of the LED grow light
+    bool status;     // Track the state of the LED grow light
+    int intensity;   // Current intensity of the LED grow light (0-100)
 };
 
 #endif

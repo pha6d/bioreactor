@@ -53,6 +53,8 @@ public:
     float getVolumeAdded() const { return volumeAdded; }
     void resetVolumeAdded() { volumeAdded = 0; }
 
+    float getMaxFlowRate() const { return _maxFlowRate; }
+
 
 private:
     uint8_t _dacAddress;    // I2C address of the DAC

@@ -14,7 +14,7 @@ HeatingPlate::HeatingPlate(int relayPin, const char* id, bool isPWMCapable)
 
 void HeatingPlate::control(bool state, int value) {
     if (_isPWMCapable) {
-        controlPWM(state ? value : 0);
+        controlPWM(state ? map(value, 0, 100, 0, 255) : 0);
     } else {
         controlOnOff(state);
     }
@@ -33,7 +33,7 @@ void HeatingPlate::controlWithPID(double pidOutput) {
     percentPower = _lastPercentPower + constrain(powerDiff, -maxChange, maxChange);
     
     if (_isPWMCapable) {
-        controlPWM(percentPower);
+        controlPWM(map(percentPower, 0, 100, 0, 255));
     } else {
         controlWithCycle(percentPower);
     }
@@ -49,7 +49,7 @@ void HeatingPlate::controlPWM(int value) {
         status = false;
     }
     Serial.print(_id);
-    Serial.println(status ? " is ON with PWM value: " + String(value) : " is OFF");
+    Serial.println(status ? " is ON with power: " + String(map(value, 0, 255, 0, 100)) + "%" : " is OFF");
 }
 
 void HeatingPlate::controlOnOff(bool state) {

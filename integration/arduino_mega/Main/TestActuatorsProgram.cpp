@@ -1,6 +1,11 @@
 #include "TestActuatorsProgram.h"
 #include <Arduino.h>
 
+// External declarations to share global variables
+extern bool stopFlag;
+extern String currentProgram;
+extern String programStatus;
+
 void TestActuatorsProgram::begin(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor,
                                  PeristalticPump& nutrientPump, PeristalticPump& basePump,
                                  HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
@@ -21,7 +26,11 @@ void TestActuatorsProgram::begin(DCPump& airPump, DCPump& drainPump, StirringMot
     this->oxygenSensor = &oxygenSensor;
     this->airFlowSensor = &airFlowSensor;
 
-    this->running = true;
+    this->running = true;     // Set the running state to true
+    stopFlag = false;         // Reset the stop flag
+    currentProgram = "Tests"; // Set the name of the current program
+    programStatus = "Running";// Set the program status to "Running"
+
     this->startTime = millis();
     this->lastPrintTime = 0;
     this->currentTest = 0;
@@ -30,8 +39,22 @@ void TestActuatorsProgram::begin(DCPump& airPump, DCPump& drainPump, StirringMot
 }
 
 void TestActuatorsProgram::update() {
-    if (!running) return;
+    if (!running) return;      // If the program is not running, exit the function
 
+    if (stopFlag) {            // Check if the stop flag is set
+        airPump->control(false, 0);
+        drainPump->control(false, 0);
+        stirringMotor->control(false, 0);
+        nutrientPump->control(false, 0);
+        basePump->control(false, 0);
+        heatingPlate->control(false);
+        ledGrowLight->control(false);
+
+        Serial.println("TESTS program interrupted.");
+        programStatus = "Stopped";  // Update the program status
+        running = false;            // Stop the program
+        return;                     // Exit the function
+    }
     unsigned long elapsedTime = millis() - startTime;
     unsigned long currentTime = millis();
 
@@ -111,7 +134,7 @@ void TestActuatorsProgram::update() {
     }
 }
 
-bool TestActuatorsProgram::isRunning() const {
+bool TestActuatorsProgram::isRunning() {
     return running;
 }
 

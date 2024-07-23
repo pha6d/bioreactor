@@ -25,7 +25,7 @@ public:
     /*
      * Method to control the heating plate.
      * @param state: Boolean indicating whether the heating plate should be on or off.
-     * @param value: PWM value (0-255) if hardware is PWM capable, ignored otherwise.
+     * @param value: Power percentage (0-100) if hardware is PWM capable, ignored otherwise.
      */
     void control(bool state, int value = 0) override;
 
@@ -56,7 +56,7 @@ private:
 
     void controlPWM(int value);
     void controlOnOff(bool state);
-    void controlWithCycle(double pidOutput);
+    void controlWithCycle(double percentage);
     int _lastPercentPower = 0;
 };
 
