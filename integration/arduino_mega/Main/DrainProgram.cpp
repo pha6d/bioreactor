@@ -1,54 +1,65 @@
 /*
- * Drain.cpp
- * This file manages the drain program using the DrainProgram class.
- * It periodically checks if the stopFlag is set and stops the drain pump if necessary.
+ * DrainProgram.cpp
+ * This file implements the DrainProgram class defined in DrainProgram.h.
+ * It controls the draining process of the bioreactor.
  */
 
 #include "DrainProgram.h"
 
-// External declarations to share global variables
-extern bool stopFlag;
-extern String currentProgram;
-extern String programStatus;
+DrainProgram::DrainProgram() : drainPump(nullptr), rate(0), duration(0), startTime(0), running(false), paused(false) {}
 
-// Initialization of the drain program
-void DrainProgram::begin(DCPump& pump, int rate, int duration) {
-    this->drainPump = &pump;  // Set the drain pump
-    this->rate = rate;        // Set the pump rate
-    this->duration = duration;  // Set the drain process duration
-    this->startTime = millis();  // Record the start time
-    this->running = true;     // Set the running state to true
-    stopFlag = false;         // Reset the stop flag
-    currentProgram = "Drain"; // Set the name of the current program
-    programStatus = "Running"; // Set the program status to "Running"
-    Serial.println("Drain started at speed: " + String(rate)); // Log the start of the drain process
-    drainPump->control(true, rate);  // Start the drain pump
-    Serial.println("Drain Pump is ON, Speed set to: " + String(rate)); // Log pump start
+void DrainProgram::configure(DCPump& pump, int rate, int duration) {
+    this->drainPump = &pump;
+    this->rate = rate;
+    this->duration = duration;
 }
 
-// Update the drain program
+void DrainProgram::begin() {
+    this->running = true;
+    this->paused = false;
+    this->startTime = millis();
+    
+    if (drainPump) {
+        drainPump->control(true, rate);
+        Serial.println("Drain started at rate: " + String(rate));
+    } else {
+        Serial.println("Error: Drain pump not configured");
+    }
+}
+
 void DrainProgram::update() {
-    if (!running) return;  // If the program is not running, exit the function
+    if (!running || paused) return;
 
-    if (stopFlag) {  // Check if the stop flag is set
-        Serial.println("Drain interrupted.");
-        programStatus = "Stopped";  // Update the program status
-        running = false;  // Stop the program
-        drainPump->control(false, 0);  // Stop the drain pump
-        Serial.println("Drain Pump is OFF");
-        return;  // Exit the function
-    }
-
-    if (millis() - startTime >= duration * 1000) {  // Check if the drain duration has elapsed
-        drainPump->control(false, 0);  // Stop the drain pump
-        programStatus = "Completed";  // Update the program status
-        running = false;  // Stop the program
-        Serial.println("Drain finished.");
-        Serial.println("Drain Pump is OFF");
+    if (millis() - startTime >= duration * 1000UL) {
+        stop();
     }
 }
 
-// Check if the drain program is running
-bool DrainProgram::isRunning() {
+void DrainProgram::pause() {
+    if (running && !paused) {
+        drainPump->control(false, 0);
+        paused = true;
+        Serial.println("Drain paused");
+    }
+}
+
+void DrainProgram::resume() {
+    if (running && paused) {
+        drainPump->control(true, rate);
+        paused = false;
+        Serial.println("Drain resumed");
+    }
+}
+
+void DrainProgram::stop() {
+    if (running) {
+        drainPump->control(false, 0);
+        running = false;
+        paused = false;
+        Serial.println("Drain finished");
+    }
+}
+
+bool DrainProgram::isRunning() const {
     return running;
 }

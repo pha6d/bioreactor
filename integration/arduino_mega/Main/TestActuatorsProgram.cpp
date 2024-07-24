@@ -1,12 +1,9 @@
 #include "TestActuatorsProgram.h"
-#include <Arduino.h>
 
-// External declarations to share global variables
-extern bool stopFlag;
-extern String currentProgram;
-extern String programStatus;
+TestActuatorsProgram::TestActuatorsProgram() : running(false), paused(false), startTime(0), lastPrintTime(0), currentTest(0) {}
 
-void TestActuatorsProgram::begin(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor,
+
+void TestActuatorsProgram::configure(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor,
                                  PeristalticPump& nutrientPump, PeristalticPump& basePump,
                                  HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
                                  PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
@@ -26,35 +23,23 @@ void TestActuatorsProgram::begin(DCPump& airPump, DCPump& drainPump, StirringMot
     this->oxygenSensor = &oxygenSensor;
     this->airFlowSensor = &airFlowSensor;
 
-    this->running = true;     // Set the running state to true
-    stopFlag = false;         // Reset the stop flag
-    currentProgram = "Tests"; // Set the name of the current program
-    programStatus = "Running";// Set the program status to "Running"
-
+    //this->running = true;
+    //this->paused = false;
     this->startTime = millis();
-    this->lastPrintTime = 0;
     this->currentTest = 0;
 
     Serial.println("Starting TESTS program");
 }
 
+void TestActuatorsProgram::begin() {
+    // Initialisation de base
+    running = true;
+    paused = false;
+}
+
 void TestActuatorsProgram::update() {
-    if (!running) return;      // If the program is not running, exit the function
+    if (!running || paused) return;
 
-    if (stopFlag) {            // Check if the stop flag is set
-        airPump->control(false, 0);
-        drainPump->control(false, 0);
-        stirringMotor->control(false, 0);
-        nutrientPump->control(false, 0);
-        basePump->control(false, 0);
-        heatingPlate->control(false);
-        ledGrowLight->control(false);
-
-        Serial.println("TESTS program interrupted.");
-        programStatus = "Stopped";  // Update the program status
-        running = false;            // Stop the program
-        return;                     // Exit the function
-    }
     unsigned long elapsedTime = millis() - startTime;
     unsigned long currentTime = millis();
 
@@ -128,13 +113,50 @@ void TestActuatorsProgram::update() {
             }
             break;
         default:
-            running = false;
-            Serial.println("All tests completed");
+            stop();
             break;
     }
 }
 
-bool TestActuatorsProgram::isRunning() {
+void TestActuatorsProgram::pause() {
+    if (running && !paused) {
+        paused = true;
+        // Stop all actuators
+        airPump->control(false, 0);
+        drainPump->control(false, 0);
+        stirringMotor->control(false, 0);
+        nutrientPump->control(false, 0);
+        basePump->control(false, 0);
+        heatingPlate->control(false);
+        ledGrowLight->control(false);
+        Serial.println("Tests paused");
+    }
+}
+
+void TestActuatorsProgram::resume() {
+    if (running && paused) {
+        paused = false;
+        Serial.println("Tests resumed");
+    }
+}
+
+void TestActuatorsProgram::stop() {
+    if (running) {
+        running = false;
+        paused = false;
+        // Stop all actuators
+        airPump->control(false, 0);
+        drainPump->control(false, 0);
+        stirringMotor->control(false, 0);
+        nutrientPump->control(false, 0);
+        basePump->control(false, 0);
+        heatingPlate->control(false);
+        ledGrowLight->control(false);
+        Serial.println("Tests completed or stopped");
+    }
+}
+
+bool TestActuatorsProgram::isRunning() const {
     return running;
 }
 

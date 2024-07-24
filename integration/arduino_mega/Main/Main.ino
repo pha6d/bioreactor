@@ -21,11 +21,6 @@
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 
-// Include interfaces
-#include "ActuatorInterface.h"
-#include "SensorInterface.h"
-#include "ActuatorController.h"
-
 // Include core components
 #include "StateMachine.h"
 #include "VolumeManager.h"
@@ -50,10 +45,11 @@
 #include "AirFlowSensor.h"
 
 // Include programs
-#include "TestActuatorsProgram.h"
 #include "DrainProgram.h"
 #include "MixProgram.h"
+#include "TestActuatorsProgram.h"
 #include "FermentationProgram.h"
+#include "PIDTestProgram.h"
 
 // Define serial port for communication with ESP32
 #define SerialESP Serial1
@@ -75,25 +71,25 @@ OxygenSensor oxygenSensor(A3, &waterTempSensor);
 AirFlowSensor airFlowSensor(26);
 
 // Instantiate programs, state machine, PID controller, etc.
-DrainProgram drainProgram;
-MixProgram mixProgram;
+Logger logger;
 PIDManager pidManager(&stirringMotor, &heatingPlate);
 VolumeManager volumeManager(1.0, 0.95, 0.1, nutrientPump, basePump, drainPump);
-FermentationProgram fermentationProgram(pidManager, volumeManager);
-Logger logger;
 SafetySystem safetySystem(1.0, 0.95, 0.1); // totalVolume, maxVolumePercent, minVolume
+
 StateMachine stateMachine(logger, pidManager, volumeManager);
+
+DrainProgram drainProgram;
+MixProgram mixProgram;
+TestActuatorsProgram testActuatorsProgram;
+FermentationProgram fermentationProgram(pidManager, volumeManager);
+PIDTestProgram pidTestProgram(pidManager);
+
 CommandHandler commandHandler(stateMachine, safetySystem, volumeManager, logger,
                               airPump, drainPump, nutrientPump, basePump,
                               stirringMotor, heatingPlate, ledGrowLight,
                               waterTempSensor, airTempSensor, phSensor,
                               turbiditySensor, oxygenSensor, airFlowSensor,
                               pidManager);
-
-// Declare global variables
-bool stopFlag = false;
-String currentProgram = "None";
-String programStatus = "Idle";
 
 unsigned long previousMillis = 0;
 const long interval = 30000; // Interval for logging (30 seconds)
@@ -118,6 +114,20 @@ void setup() {
 
     pidManager.initialize(2.0, 5.0, 1.0, 2.0, 5.0, 1.0, 2.0, 5.0, 1.0);
     safetySystem.setLogger(&logger);
+
+    // Add programs to the state machine
+    stateMachine.addProgram(&drainProgram);
+    stateMachine.addProgram(&mixProgram);
+    stateMachine.addProgram(&testActuatorsProgram);
+    stateMachine.addProgram(&fermentationProgram);
+    stateMachine.addProgram(&pidTestProgram);
+
+    // Set up PIDTestProgram
+    pidTestProgram.setWaterTempSensor(&waterTempSensor);
+    pidTestProgram.setPhSensor(&phSensor);
+    pidTestProgram.setOxygenSensor(&oxygenSensor);
+    pidTestProgram.setHeatingPlate(&heatingPlate);
+    pidTestProgram.setAirPump(&airPump);
 
     logger.logInfo("Setup completed");
 }
@@ -181,15 +191,11 @@ void loop() {
         commandHandler.executeCommand(command);
     }
     
-    // Update actuator controller
-    ActuatorController::update();
-
     // Update state machine
-    stateMachine.update(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
+    stateMachine.update();
 
     // Update PID manager
     pidManager.updateAll(waterTempSensor.readValue(), phSensor.readValue(), oxygenSensor.readValue());
-    pidManager.updateTest();
 
     // Check safety limits
     safetySystem.checkLimits(waterTempSensor.readValue(), 
@@ -205,15 +211,10 @@ void loop() {
         previousMillis = currentMillis;
 
         logger.logData(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
-                       waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-                       stateMachine.getCurrentProgram(), stateMachine.getCurrentStatus());
-    }
-
-    if (stopFlag) {
-        stopFlag = false;
+               waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
+               stateMachine.getCurrentProgram(), String(static_cast<int>(stateMachine.getCurrentState())));
     }
 
     // Short pause to avoid excessive CPU usage
     delay(10);
 }
-

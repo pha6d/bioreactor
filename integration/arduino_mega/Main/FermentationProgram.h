@@ -1,8 +1,9 @@
 #ifndef FERMENTATION_PROGRAM_H
 #define FERMENTATION_PROGRAM_H
 
-#include <Arduino.h>
+#include "ProgramBase.h"
 #include "PIDManager.h"
+#include "VolumeManager.h"
 #include "DCPump.h"
 #include "PeristalticPump.h"
 #include "StirringMotor.h"
@@ -14,15 +15,12 @@
 #include "TurbiditySensor.h"
 #include "OxygenSensor.h"
 #include "AirFlowSensor.h"
-#include "VolumeManager.h"
 
-extern bool stopFlag;
-
-class FermentationProgram {
+class FermentationProgram : public ProgramBase {
 public:
     FermentationProgram(PIDManager& pidManager, VolumeManager& volumeManager);
 
-    void begin(DCPump& airPump, DCPump& drainPump,
+    void configure(DCPump& airPump, DCPump& drainPump,
                PeristalticPump& nutrientPump, PeristalticPump& basePump,
                StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
                PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
@@ -32,12 +30,15 @@ public:
                float nutrientConc, float baseConc, int duration,
                const String& experimentName, const String& comment);
 
-    void update();
-    bool isRunning() const;
-    void stop();
-    void pause();
-    void resume();
-    bool isPaused() const;
+    void begin() override;
+
+    // Méthodes héritées de ProgramBase
+    void update() override;
+    void pause() override;
+    void resume() override;
+    void stop() override;
+    bool isRunning() const override;
+    String getName() const override { return "Fermentation"; }
 
 private:
     PIDManager& pidManager;
@@ -60,6 +61,7 @@ private:
     OxygenSensor* oxygenSensor;
     AirFlowSensor* airFlowSensor;
 
+    // Fermentation parameters
     float tempSetpoint;
     float phSetpoint;
     float doSetpoint;

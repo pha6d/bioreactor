@@ -1,6 +1,16 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
+#include <Arduino.h>
+#include "ProgramBase.h"
+#include "Logger.h"
+#include "PIDManager.h"
+#include "VolumeManager.h"
+#include "DrainProgram.h"
+#include "MixProgram.h"
+#include "FermentationProgram.h"
+#include "PIDTestProgram.h"
+#include "TestActuatorsProgram.h"
 #include "DCPump.h"
 #include "PeristalticPump.h"
 #include "StirringMotor.h"
@@ -12,30 +22,42 @@
 #include "TurbiditySensor.h"
 #include "OxygenSensor.h"
 #include "AirFlowSensor.h"
-#include "DrainProgram.h"
-#include "MixProgram.h"
-#include "TestActuatorsProgram.h"
-#include "FermentationProgram.h"
-#include "Logger.h"
-#include "PIDManager.h"
-#include "VolumeManager.h"
 
 enum class ProgramState {
     IDLE,
     RUNNING,
     PAUSED,
     COMPLETED,
+    STOPPED,
     ERROR
 };
 
 class StateMachine {
 public:
     StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager& volumeManager);
+    void addProgram(ProgramBase* program);
+    void update();
+    void startProgram(const String& programName);
+    void stopProgram(const String& programName);
+    void stopAllPrograms();
+    ProgramState getCurrentState() const;
+    String getCurrentProgram() const;
 
-    void update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
-                PeristalticPump& basePump, StirringMotor& stirringMotor,
-                HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight);
+    // Configuration methods
+    void configureDrain(DCPump& drainPump, int rate, int duration);
+    void configureMix(StirringMotor& stirringMotor, int speed);
+    void configureFermentation(DCPump& airPump, DCPump& drainPump,
+                               PeristalticPump& nutrientPump, PeristalticPump& basePump,
+                               StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
+                               PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
+                               PHSensor& phSensor, TurbiditySensor& turbiditySensor,
+                               OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
+                               float tempSetpoint, float phSetpoint, float doSetpoint,
+                               float nutrientConc, float baseConc, int duration,
+                               const String& experimentName, const String& comment);
+    void configurePIDTest(const String& pidType, double setpoint);
 
+    // Start methods
     void startDrain(DCPump& drainPump, int rate, int duration);
     void startMix(StirringMotor& stirringMotor, int speed);
     void startTests(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor, 
@@ -53,35 +75,23 @@ public:
                            float tempSetpoint, float phSetpoint, float doSetpoint,
                            float nutrientConc, float baseConc, int duration,
                            const String& experimentName, const String& comment);
+    void startPIDTest(const String& pidType, double setpoint);
 
-    void startTemperaturePID(double setpoint);
-    void startPHPID(double setpoint);
-    void startDOPID(double setpoint);
-    
-    void stopCurrentProgram();
     void stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
                  PeristalticPump& basePump, StirringMotor& stirringMotor,
                  HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight);
 
-    String getCurrentProgram() const;
-    String getCurrentStatus() const;
-    ProgramState getState() const { return currentState; }
-
 private:
+    static const int MAX_PROGRAMS = 10;
+    ProgramBase* programs[MAX_PROGRAMS];
+    int programCount;
     ProgramState currentState;
-    String currentProgram;
+    ProgramBase* currentProgram;
     Logger& logger;
+    PIDManager& pidManager;
     VolumeManager& volumeManager;
 
-    DrainProgram drainProgram;
-    MixProgram mixProgram;
-    TestActuatorsProgram testProgram;
-    PIDManager& pidManager;
-    FermentationProgram fermentationProgram;
-
-    unsigned long startTime;
-
-    void updateStateAndProgram();
+    void transitionToState(ProgramState newState);
 };
 
 #endif // STATE_MACHINE_H

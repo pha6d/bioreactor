@@ -1,30 +1,31 @@
 /*
  * MixProgram.h
- * Header file for the MixProgram class. This class controls the mixing process of the bioreactor.
- * It allows starting, updating, and checking the status of the mixing process.
+ * This file defines the MixProgram class which controls the mixing process of the bioreactor.
  */
 
 #ifndef MIX_PROGRAM_H
 #define MIX_PROGRAM_H
 
+#include "ProgramBase.h"
 #include "StirringMotor.h"
 
- // MixProgram class definition
-class MixProgram {
+class MixProgram : public ProgramBase {
 public:
-    // Initializes the mixing process with the specified stirring motor and speed
-    void begin(StirringMotor& motor, int speed);
-
-    // Updates the mixing process, checking if it should continue or stop
-    void update();
-
-    // Checks if the mixing process is currently running
-    bool isRunning();
+    MixProgram();
+    void begin() override;
+    void configure(StirringMotor& motor, int speed);
+    void update() override;
+    void pause() override;
+    void resume() override;
+    void stop() override;
+    bool isRunning() const override;
+    String getName() const override { return "Mix"; }
 
 private:
-    StirringMotor* stirringMotor;  // Pointer to the stirring motor
-    int speed;                     // Speed at which the motor should operate
-    bool running;                  // Indicates if the mixing process is running
+    StirringMotor* stirringMotor;
+    int speed;
+    bool running;
+    bool paused;
 };
 
 #endif // MIX_PROGRAM_H

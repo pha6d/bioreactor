@@ -1,5 +1,3 @@
-// CommandHandler.h
-
 #ifndef COMMAND_HANDLER_H
 #define COMMAND_HANDLER_H
 
@@ -8,7 +6,18 @@
 #include "SafetySystem.h"
 #include "VolumeManager.h"
 #include "Logger.h"
-#include "ActuatorController.h"
+#include "PIDManager.h"
+#include "DCPump.h"
+#include "PeristalticPump.h"
+#include "StirringMotor.h"
+#include "HeatingPlate.h"
+#include "LEDGrowLight.h"
+#include "PT100Sensor.h"
+#include "DS18B20TemperatureSensor.h"
+#include "PHSensor.h"
+#include "TurbiditySensor.h"
+#include "OxygenSensor.h"
+#include "AirFlowSensor.h"
 
 class CommandHandler {
 public:
@@ -22,11 +31,7 @@ public:
                    TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, 
                    AirFlowSensor& airFlowSensor, PIDManager& pidManager);
 
-    // Execute a command received from the user
     void executeCommand(const String& command);
-
-    // Print help information
-    void printHelp();
 
 private:
     StateMachine& stateMachine;
@@ -48,7 +53,7 @@ private:
     AirFlowSensor& airFlowSensor;
     PIDManager& pidManager;
 
-    // Helper method to parse fermentation parameters
+    void printHelp();
     void parseFermentationParams(const String& command, float& tempSetpoint, float& phSetpoint, 
                                  float& doSetpoint, float& nutrientConc, float& baseConc, 
                                  int& duration, String& experimentName, String& comment);

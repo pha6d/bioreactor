@@ -1,48 +1,133 @@
 #include "StateMachine.h"
 
 StateMachine::StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager& volumeManager)
-    : currentState(ProgramState::IDLE), currentProgram("None"), logger(logger),
-      pidManager(pidManager), fermentationProgram(pidManager, volumeManager),
-      testRunning(false), startTime(0) {}
+    : programCount(0),
+      currentState(ProgramState::IDLE),
+      currentProgram(nullptr),
+      logger(logger),
+      pidManager(pidManager),
+      volumeManager(volumeManager)
+{
+}
 
-void StateMachine::update(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
-                          PeristalticPump& basePump, StirringMotor& stirringMotor,
-                          HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight) {
-    // Update all running programs
-    if (drainProgram.isRunning()) {
-        drainProgram.update();
+void StateMachine::addProgram(ProgramBase* program) {
+    if (programCount < MAX_PROGRAMS) {
+        programs[programCount++] = program;
+    } else {
+        logger.logError("Maximum number of programs reached");
     }
-    if (mixProgram.isRunning()) {
-        mixProgram.update();
-    }
-    if (testProgram.isRunning()) {
-        testProgram.update();
-    }
-    if (fermentationProgram.isRunning()) {
-        fermentationProgram.update();
-    }
+}
 
-    // Update state and program
-    updateStateAndProgram();
+void StateMachine::update() {
+    if (currentProgram && currentState == ProgramState::RUNNING) {
+        currentProgram->update();
+        if (!currentProgram->isRunning()) {
+            transitionToState(ProgramState::COMPLETED);
+        }
+    }
+}
 
-    // Check if we need to stop any processes
-    if (currentState == ProgramState::COMPLETED || currentState == ProgramState::ERROR) {
-        stopAll(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight);
+void StateMachine::startProgram(const String& programName) {
+    for (int i = 0; i < programCount; i++) {
+        if (programs[i]->getName() == programName) {
+            if (currentProgram) {
+                stopProgram(currentProgram->getName());
+            }
+            currentProgram = programs[i];
+            transitionToState(ProgramState::RUNNING);
+            logger.logInfo("Started program: " + programName);
+            return;
+        }
+    }
+    logger.logWarning("Program not found: " + programName);
+}
+
+void StateMachine::stopProgram(const String& programName) {
+    if (currentProgram && currentProgram->getName() == programName) {
+        currentProgram->stop();
+        transitionToState(ProgramState::STOPPED);
+        logger.logInfo("Stopped program: " + programName);
+    }
+}
+
+void StateMachine::stopAllPrograms() {
+    for (int i = 0; i < programCount; i++) {
+        programs[i]->stop();
+    }
+    currentProgram = nullptr;
+    transitionToState(ProgramState::STOPPED);
+    logger.logInfo("All programs stopped");
+}
+
+ProgramState StateMachine::getCurrentState() const {
+    return currentState;
+}
+
+String StateMachine::getCurrentProgram() const {
+    return currentProgram ? currentProgram->getName() : "None";
+}
+
+void StateMachine::transitionToState(ProgramState newState) {
+    if (newState != currentState) {
+        currentState = newState;
+        logger.logInfo("State changed to: " + String(static_cast<int>(currentState)));
+    }
+}
+
+void StateMachine::configureDrain(DCPump& drainPump, int rate, int duration) {
+    if (currentProgram && currentProgram->getName() == "Drain") {
+        DrainProgram* program = static_cast<DrainProgram*>(currentProgram);
+        program->configure(drainPump, rate, duration);
+    }
+}
+
+void StateMachine::configureMix(StirringMotor& stirringMotor, int speed) {
+    if (currentProgram && currentProgram->getName() == "Mix") {
+        MixProgram* program = static_cast<MixProgram*>(currentProgram);
+        program->configure(stirringMotor, speed);
+    }
+}
+
+void StateMachine::configureFermentation(DCPump& airPump, DCPump& drainPump,
+                                         PeristalticPump& nutrientPump, PeristalticPump& basePump,
+                                         StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
+                                         PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
+                                         PHSensor& phSensor, TurbiditySensor& turbiditySensor,
+                                         OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
+                                         float tempSetpoint, float phSetpoint, float doSetpoint,
+                                         float nutrientConc, float baseConc, int duration,
+                                         const String& experimentName, const String& comment) {
+    if (currentProgram && currentProgram->getName() == "Fermentation") {
+        FermentationProgram* program = static_cast<FermentationProgram*>(currentProgram);
+        program->configure(airPump, drainPump, nutrientPump, basePump, stirringMotor,
+                           heatingPlate, ledGrowLight, waterTempSensor, airTempSensor,
+                           phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
+                           tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc,
+                           duration, experimentName, comment);
+    }
+}
+
+void StateMachine::configurePIDTest(const String& pidType, double setpoint) {
+    if (currentProgram && currentProgram->getName() == "PIDTest") {
+        PIDTestProgram* program = static_cast<PIDTestProgram*>(currentProgram);
+        program->configure(pidType, setpoint);
     }
 }
 
 void StateMachine::startDrain(DCPump& drainPump, int rate, int duration) {
-    logger.logInfo("Starting drain process...");
-    drainProgram.begin(drainPump, rate, duration);
-    currentState = ProgramState::RUNNING;
-    currentProgram = "Drain";
+    startProgram("Drain");
+    configureDrain(drainPump, rate, duration);
+    if (currentProgram && currentProgram->getName() == "Drain") {
+        currentProgram->begin();
+    }
 }
 
 void StateMachine::startMix(StirringMotor& stirringMotor, int speed) {
-    logger.logInfo("Starting mix process...");
-    mixProgram.begin(stirringMotor, speed);
-    currentState = ProgramState::RUNNING;
-    currentProgram = "Mix";
+    startProgram("Mix");
+    configureMix(stirringMotor, speed);
+    if (currentProgram && currentProgram->getName() == "Mix") {
+        currentProgram->begin();
+    }
 }
 
 void StateMachine::startTests(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor, 
@@ -51,12 +136,14 @@ void StateMachine::startTests(DCPump& airPump, DCPump& drainPump, StirringMotor&
                               PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
                               PHSensor& phSensor, TurbiditySensor& turbiditySensor, 
                               OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor) {
-    logger.logInfo("Starting tests...");
-    testProgram.begin(airPump, drainPump, stirringMotor, nutrientPump, basePump, heatingPlate, ledGrowLight,
-                      waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
-    currentState = ProgramState::RUNNING;
-    currentProgram = "Tests";
-    //testRunning = true;
+    startProgram("TestActuators");
+    if (currentProgram && currentProgram->getName() == "TestActuators") {
+        TestActuatorsProgram* program = static_cast<TestActuatorsProgram*>(currentProgram);
+        program->begin();
+        program->configure(airPump, drainPump, stirringMotor, nutrientPump, basePump, 
+                           heatingPlate, ledGrowLight, waterTempSensor, airTempSensor,
+                           phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
+    }
 }
 
 void StateMachine::startFermentation(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, 
@@ -69,11 +156,24 @@ void StateMachine::startFermentation(DCPump& airPump, DCPump& drainPump, Perista
                                      float nutrientConc, float baseConc, int duration,
                                      const String& experimentName, const String& comment) {
     logger.logInfo("Starting fermentation process...");
-    fermentationProgram.begin(airPump, drainPump, nutrientPump, basePump, stirringMotor, heatingPlate, ledGrowLight,
-                              waterTempSensor, airTempSensor, phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-                              tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc, duration, experimentName, comment);
-    currentState = ProgramState::RUNNING;
-    currentProgram = "Fermentation";
+    startProgram("Fermentation");
+    configureFermentation(airPump, drainPump, nutrientPump, basePump, stirringMotor,
+                          heatingPlate, ledGrowLight, waterTempSensor, airTempSensor,
+                          phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
+                          tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc,
+                          duration, experimentName, comment);
+    if (currentProgram && currentProgram->getName() == "Fermentation") {
+        currentProgram->begin();
+    }
+}
+
+void StateMachine::startPIDTest(const String& pidType, double setpoint) {
+    startProgram("PIDTest");
+    if (currentProgram && currentProgram->getName() == "PIDTest") {
+        PIDTestProgram* program = static_cast<PIDTestProgram*>(currentProgram);
+        program->begin();
+        program->configure(pidType, setpoint);
+    }
 }
 
 void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
@@ -88,106 +188,5 @@ void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& 
     heatingPlate.control(false);
     ledGrowLight.control(false);
 
-    pidManager.stopTemperaturePID();
-    pidManager.stopPHPID();
-    pidManager.stopDOPID();
-    //stopAllTests();
-    currentState = ProgramState::IDLE;
-    currentProgram = "None";
-    
-    stopFlag = true;
-}
-
-String StateMachine::getCurrentProgram() const {
-    return currentProgram;
-}
-
-String StateMachine::getCurrentStatus() const {
-    switch (currentState) {
-        case ProgramState::IDLE: return "Idle";
-        case ProgramState::RUNNING: return "Running";
-        case ProgramState::PAUSED: return "Paused";
-        case ProgramState::COMPLETED: return "Completed";
-        case ProgramState::ERROR: return "Error";
-        default: return "Unknown";
-    }
-}
-
-//void StateMachine::stopAllTests() {
-//    testRunning = false;
-//    logger.logInfo("All tests stopped.");
-//}
-
-bool StateMachine::isTestRunning() const {
-    return testRunning;
-}
-
-void StateMachine::startTemperaturePID(double setpoint) {
-    logger.logInfo("Starting Temperature PID control...");
-    pidManager.startTemperaturePID(setpoint);
-    currentState = ProgramState::RUNNING;
-    currentProgram = "Temperature PID";
-}
-
-void StateMachine::startPHPID(double setpoint) {
-    logger.logInfo("Starting pH PID control...");
-    pidManager.startPHPID(setpoint);
-    currentState = ProgramState::RUNNING;
-    currentProgram = "pH PID";
-}
-
-void StateMachine::startDOPID(double setpoint) {
-    logger.logInfo("Starting DO PID control...");
-    pidManager.startDOPID(setpoint);
-    currentState = ProgramState::RUNNING;
-    currentProgram = "DO PID";
-}
-
-void StateMachine::stopTemperaturePID() {
-    logger.logInfo("Stopping Temperature PID control...");
-    pidManager.stopTemperaturePID();
-    updateStateAndProgram();
-}
-
-void StateMachine::stopPHPID() {
-    logger.logInfo("Stopping pH PID control...");
-    pidManager.stopPHPID();
-    updateStateAndProgram();
-}
-
-void StateMachine::stopDOPID() {
-    logger.logInfo("Stopping DO PID control...");
-    pidManager.stopDOPID();
-    updateStateAndProgram();
-}
-
-void StateMachine::updateStateAndProgram() {
-    if (drainProgram.isRunning()) {
-        currentProgram = "Drain";
-        currentState = ProgramState::RUNNING;
-    } else if (mixProgram.isRunning()) {
-        currentProgram = "Mix";
-        currentState = ProgramState::RUNNING;
-    } else if (testProgram.isRunning()) {
-        currentProgram = "Tests";
-        currentState = ProgramState::RUNNING;
-    } else if (fermentationProgram.isRunning()) {
-        currentProgram = "Fermentation";
-        currentState = ProgramState::RUNNING;
-    } else if (pidManager.isTestRunning()) {
-        currentProgram = "PID Test";
-        currentState = ProgramState::RUNNING;
-    } else {
-        currentProgram = "None";
-        currentState = ProgramState::IDLE;
-    }
-
-    // Check if any program has just completed
-    if (currentState == ProgramState::RUNNING && 
-        !drainProgram.isRunning() && !mixProgram.isRunning() && 
-        !testProgram.isRunning() && !fermentationProgram.isRunning() &&
-        !pidManager.isTestRunning()) {
-        currentState = ProgramState::COMPLETED;
-        logger.logInfo("Program completed: " + currentProgram);
-    }
+    stopAllPrograms();
 }

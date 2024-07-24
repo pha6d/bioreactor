@@ -1,46 +1,60 @@
 /*
  * MixProgram.cpp
- * This file manages the mixing program using the MixProgram class.
- * It periodically checks if the stopFlag is set and stops the stirring motor if necessary.
+ * This file implements the MixProgram class defined in MixProgram.h.
+ * It controls the mixing process of the bioreactor.
  */
 
 #include "MixProgram.h"
 
-// External declarations to share global variables
-extern bool stopFlag;
-extern String currentProgram;
-extern String programStatus;
+MixProgram::MixProgram() : stirringMotor(nullptr), speed(0), running(false), paused(false) {}
 
-// Initialization of the mixing program
-void MixProgram::begin(StirringMotor& motor, int speed) {
-    this->stirringMotor = &motor;  // Set the stirring motor
-    this->speed = speed;           // Set the motor speed
-    this->running = true;          // Set the running state to true
-    stopFlag = false;              // Reset the stop flag
-    currentProgram = "Mix";        // Set the name of the current program
-    programStatus = "Running";     // Set the program status to "Running"
-    Serial.println("Mixing started with " + String(stirringMotor->getName()) + " at speed: " + String(speed)); // Log the start of the mixing process
-    stirringMotor->control(true, speed); // Start the stirring motor at the specified speed
-    Serial.println(String(stirringMotor->getName()) + " is ON, Speed set to: " + String(speed)); // Log motor start
+void MixProgram::configure(StirringMotor& motor, int speed) {
+    this->stirringMotor = &motor;
+    this->speed = speed;
 }
 
-// Update the mixing program
-void MixProgram::update() {
-    if (!running) return;  // If the program is not running, exit the function
-    if (stopFlag) {  // Check if the stop flag is set
-        Serial.println("Mixing interrupted.");
-        programStatus = "Stopped";  // Update the program status
-        running = false;  // Stop the program
-        stirringMotor->control(false, 0);  // Stop the stirring motor
-        Serial.println(String(stirringMotor->getName()) + " is OFF");
-        return;  // Exit the function
+void MixProgram::begin() {
+    this->running = true;
+    this->paused = false;
+    
+    if (stirringMotor) {
+        stirringMotor->control(true, speed);
+        Serial.println("Mixing started with " + String(stirringMotor->getName()) + " at speed: " + String(speed));
+    } else {
+        Serial.println("Error: Stirring motor not configured");
     }
-    // No need to control the motor here as it's already running
-    // Uncomment if you want to log periodically
-    // Serial.println(String(stirringMotor->getName()) + " is ON, Speed set to: " + String(speed));
 }
 
-// Check if the mixing program is running
-bool MixProgram::isRunning() {
+void MixProgram::update() {
+    // Le processus de mélange se poursuit continuellement jusqu'à ce qu'il soit arrêté
+    // Aucune logique supplémentaire n'est nécessaire ici
+}
+
+void MixProgram::pause() {
+    if (running && !paused) {
+        stirringMotor->control(false, 0);
+        paused = true;
+        Serial.println("Mixing paused");
+    }
+}
+
+void MixProgram::resume() {
+    if (running && paused) {
+        stirringMotor->control(true, speed);
+        paused = false;
+        Serial.println("Mixing resumed");
+    }
+}
+
+void MixProgram::stop() {
+    if (running) {
+        stirringMotor->control(false, 0);
+        running = false;
+        paused = false;
+        Serial.println("Mixing stopped");
+    }
+}
+
+bool MixProgram::isRunning() const {
     return running;
 }
