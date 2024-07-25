@@ -76,10 +76,12 @@ public:
                            float nutrientConc, float baseConc, int duration,
                            const String& experimentName, const String& comment);
     void startPIDTest(const String& pidType, double setpoint);
+    void startActuatorTest(const String& actuatorName, float value, int duration);
 
     void stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
                  PeristalticPump& basePump, StirringMotor& stirringMotor,
                  HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight);
+    void startSensorTest();
 
 private:
     static const int MAX_PROGRAMS = 10;

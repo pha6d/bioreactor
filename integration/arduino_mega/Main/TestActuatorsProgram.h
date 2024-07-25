@@ -13,16 +13,20 @@
 #include "TurbiditySensor.h"
 #include "OxygenSensor.h"
 #include "AirFlowSensor.h"
+#include "Logger.h"
 
 class TestActuatorsProgram : public ProgramBase {
 public:
-    TestActuatorsProgram();
+    TestActuatorsProgram(Logger& logger, PT100Sensor& waterTempSensor,
+                     DS18B20TemperatureSensor& airTempSensor,
+                     PHSensor& phSensor, TurbiditySensor& turbiditySensor,
+                     OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor);
     void configure(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor,
-               PeristalticPump& nutrientPump, PeristalticPump& basePump,
-               HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-               PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
-               PHSensor& phSensor, TurbiditySensor& turbiditySensor,
-               OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor);
+                   PeristalticPump& nutrientPump, PeristalticPump& basePump,
+                   HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
+                   PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
+                   PHSensor& phSensor, TurbiditySensor& turbiditySensor,
+                   OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor);
     void begin() override;
     void update() override;
     void pause() override;
@@ -31,7 +35,12 @@ public:
     bool isRunning() const override;
     String getName() const override { return "TestActuators"; }
 
+    void runIndividualTest(const String& actuatorName, float value, int duration);
+    void startSensorTest();
+
 private:
+    static const unsigned long SENSOR_PRINT_INTERVAL = 5000; // 5 secondes
+
     DCPump* airPump;
     DCPump* drainPump;
     StirringMotor* stirringMotor;
@@ -39,12 +48,14 @@ private:
     PeristalticPump* basePump;
     HeatingPlate* heatingPlate;
     LEDGrowLight* ledGrowLight;
-    PT100Sensor* waterTempSensor;
-    DS18B20TemperatureSensor* airTempSensor;
-    PHSensor* phSensor;
-    TurbiditySensor* turbiditySensor;
-    OxygenSensor* oxygenSensor;
-    AirFlowSensor* airFlowSensor;
+    
+    Logger& logger;
+    PT100Sensor& waterTempSensor;
+    DS18B20TemperatureSensor& airTempSensor;
+    PHSensor& phSensor;
+    TurbiditySensor& turbiditySensor;
+    OxygenSensor& oxygenSensor;
+    AirFlowSensor& airFlowSensor;
 
     bool running;
     bool paused;
@@ -52,7 +63,15 @@ private:
     unsigned long lastPrintTime;
     int currentTest;
 
+    String currentIndividualTest;
+    float individualTestValue;
+    int individualTestDuration;
+
+    bool isSensorTestRunning;
+
     void printSensorData();
+    void runFullTestSequence(unsigned long elapsedTime);
+    void updateIndividualTest(unsigned long elapsedTime);
 };
 
 #endif // TEST_ACTUATORS_PROGRAM_H

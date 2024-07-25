@@ -24,9 +24,24 @@ void CommandHandler::executeCommand(const String& command) {
 
     if (command.equalsIgnoreCase("help")) {
         printHelp();
+    } else if (command == "test sensors") {
+        logger.logInfo("Starting sensors test");
+        stateMachine.startSensorTest();
     } else if (command.startsWith("test ")) {
-        String testCommand = command.substring(5); 
-        // Implement test command logic here
+        String testCommand = command.substring(5);
+        int firstSpace = testCommand.indexOf(' ');
+        int secondSpace = testCommand.indexOf(' ', firstSpace + 1);
+        if (firstSpace != -1 && secondSpace != -1) {
+            String actuatorName = testCommand.substring(0, firstSpace);
+            float value = testCommand.substring(firstSpace + 1, secondSpace).toFloat();
+            int duration = testCommand.substring(secondSpace + 1).toInt();
+            stateMachine.startActuatorTest(actuatorName, value, duration);
+        } else {
+            logger.logWarning("Invalid test command format");
+        }
+    } else if (command == "test sensors") {
+        logger.logInfo("Starting sensors test");
+        stateMachine.startSensorTest();
     } else if (command.equalsIgnoreCase("tests")) {
         logger.logInfo("Starting tests...");
         stateMachine.startTests(airPump, drainPump, stirringMotor, nutrientPump, basePump, 
@@ -100,6 +115,7 @@ void CommandHandler::printHelp() {
     Serial.println();
     Serial.println("------------------------------------------------- Available commands: -------------------------------------------------");
     Serial.println("help - Display this help message");
+    Serial.println("test sensors - Start continuous sensor data reading");
     Serial.println("test <actuator> <value> <duration> - Test a specific actuator");
     Serial.println("  Available actuators:");
     Serial.print("    basePump <flow_rate_0_");

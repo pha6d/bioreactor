@@ -18,11 +18,16 @@ public:
     static void emergencyStop();
 
 private:
+    // Ces méthodes ne sont pas utilisées dans l'implémentation actuelle
+    // mais sont conservées pour une utilisation potentielle future.
+    // Elles pourraient être utilisées pour initialiser les actuateurs
+    // dans les différents programmes ou pour des tests plus spécifiques.
     static void runPeristalticPump(PeristalticPump& pump, float flowRate, int duration);
     static void runDCPump(DCPump& pump, int speed, int duration);
     static void runStirringMotor(StirringMotor& motor, int speed, int duration);
     static void runHeatingPlate(HeatingPlate& heatingPlate, int temperature, int duration);
     static void runLEDGrowLight(LEDGrowLight& light, int intensity, int duration);
+
     static void logActuatorOperation(const String& actuatorName, float value, int duration);
 
     static bool testRunning;

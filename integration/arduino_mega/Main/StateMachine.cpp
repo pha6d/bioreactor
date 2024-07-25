@@ -1,5 +1,6 @@
 #include "StateMachine.h"
 
+
 StateMachine::StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager& volumeManager)
     : programCount(0),
       currentState(ProgramState::IDLE),
@@ -190,3 +191,21 @@ void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& 
 
     stopAllPrograms();
 }
+
+void StateMachine::startActuatorTest(const String& actuatorName, float value, int duration) {
+    startProgram("TestActuators");
+    if (currentProgram && currentProgram->getName() == "TestActuators") {
+        TestActuatorsProgram* program = static_cast<TestActuatorsProgram*>(currentProgram);
+        program->begin();
+        program->runIndividualTest(actuatorName, value, duration);
+    }
+}
+
+void StateMachine::startSensorTest() {
+    startProgram("TestActuators");
+    if (currentProgram && currentProgram->getName() == "TestActuators") {
+        TestActuatorsProgram* program = static_cast<TestActuatorsProgram*>(currentProgram);
+        program->startSensorTest();
+    }
+}
+

@@ -80,7 +80,9 @@ StateMachine stateMachine(logger, pidManager, volumeManager);
 
 DrainProgram drainProgram;
 MixProgram mixProgram;
-TestActuatorsProgram testActuatorsProgram;
+TestActuatorsProgram testActuatorsProgram(logger, waterTempSensor, airTempSensor, 
+                                          phSensor, turbiditySensor, 
+                                          oxygenSensor, airFlowSensor);
 FermentationProgram fermentationProgram(pidManager, volumeManager);
 PIDTestProgram pidTestProgram(pidManager);
 
@@ -121,6 +123,7 @@ void setup() {
     stateMachine.addProgram(&testActuatorsProgram);
     stateMachine.addProgram(&fermentationProgram);
     stateMachine.addProgram(&pidTestProgram);
+    stateMachine.addProgram(&testActuatorsProgram);
 
     // Set up PIDTestProgram
     pidTestProgram.setWaterTempSensor(&waterTempSensor);
