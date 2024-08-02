@@ -1,65 +1,69 @@
-/*
- * DrainProgram.cpp
- * This file implements the DrainProgram class defined in DrainProgram.h.
- * It controls the draining process of the bioreactor.
- */
-
+// DrainProgram.cpp
 #include "DrainProgram.h"
+#include <Arduino.h>
+#include "Logger.h"
 
-DrainProgram::DrainProgram() : drainPump(nullptr), rate(0), duration(0), startTime(0), running(false), paused(false) {}
+DrainProgram::DrainProgram() : rate(0), duration(0), startTime(0) {}
 
-void DrainProgram::configure(DCPump& pump, int rate, int duration) {
-    this->drainPump = &pump;
-    this->rate = rate;
-    this->duration = duration;
-}
-
-void DrainProgram::begin() {
-    this->running = true;
-    this->paused = false;
-    this->startTime = millis();
-    
-    if (drainPump) {
-        drainPump->control(true, rate);
-        Serial.println("Drain started at rate: " + String(rate));
+void DrainProgram::start(const String& command) {
+    // Parse command: "drain <rate> <duration>"
+    int firstSpace = command.indexOf(' ');
+    int secondSpace = command.indexOf(' ', firstSpace + 1);
+    if (firstSpace != -1 && secondSpace != -1) {
+        rate = command.substring(firstSpace + 1, secondSpace).toInt();
+        duration = command.substring(secondSpace + 1).toInt();
+        
+        _isRunning = true;
+        _isPaused = false;
+        startTime = millis();
+        
+        ActuatorController::runActuator("drainPump", rate, 0); // 0 for continuous operation
+        Logger::log(LogLevel::INFO, "Drain started at rate: " + String(rate));
     } else {
-        Serial.println("Error: Drain pump not configured");
+        Logger::log(LogLevel::ERROR, "Invalid drain command format");
     }
 }
 
 void DrainProgram::update() {
-    if (!running || paused) return;
+    if (!_isRunning || _isPaused) return;
 
     if (millis() - startTime >= duration * 1000UL) {
         stop();
+        Logger::log(LogLevel::INFO, "Drain finished");
     }
 }
 
 void DrainProgram::pause() {
-    if (running && !paused) {
-        drainPump->control(false, 0);
-        paused = true;
-        Serial.println("Drain paused");
+    if (_isRunning && !_isPaused) {
+        ActuatorController::stopActuator("drainPump");
+        _isPaused = true;
+        Logger::log(LogLevel::INFO, "Drain paused");
     }
 }
 
 void DrainProgram::resume() {
-    if (running && paused) {
-        drainPump->control(true, rate);
-        paused = false;
-        Serial.println("Drain resumed");
+    if (_isRunning && _isPaused) {
+        ActuatorController::runActuator("drainPump", rate, 0);
+        _isPaused = false;
+        Logger::log(LogLevel::INFO, "Drain resumed");
     }
 }
 
 void DrainProgram::stop() {
-    if (running) {
-        drainPump->control(false, 0);
-        running = false;
-        paused = false;
-        Serial.println("Drain finished");
+    if (_isRunning) {
+        ActuatorController::stopActuator("drainPump");
+        _isRunning = false;
+        _isPaused = false;
     }
 }
 
-bool DrainProgram::isRunning() const {
-    return running;
+void DrainProgram::parseCommand(const String& command) {
+    int firstSpace = command.indexOf(' ');
+    int secondSpace = command.indexOf(' ', firstSpace + 1);
+    if (firstSpace != -1 && secondSpace != -1) {
+        rate = command.substring(firstSpace + 1, secondSpace).toInt();
+        duration = command.substring(secondSpace + 1).toInt();
+    } else {
+        Logger::log(LogLevel::ERROR, "Invalid drain command format");
+    }
 }

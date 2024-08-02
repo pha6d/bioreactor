@@ -33,8 +33,7 @@ public:
      * Constructor for DS18B20TemperatureSensor.
      * @param pin: The digital pin connected to the DS18B20 sensor.
      */
-    DS18B20TemperatureSensor(int pin);
-
+    DS18B20TemperatureSensor(int pin, const char* name);
     /*
      * Method to initialize the temperature sensor.
      */
@@ -45,10 +44,12 @@ public:
      * @return: The temperature in degrees Celsius.
      */
     float readValue();
+    const char* getName() const override { return _name; }
 
 private:
     OneWire _ds; // OneWire object for communication with DS18B20
     int _pin;    // Digital pin connected to the DS18B20
+    const char* _name;
 };
 
 #endif

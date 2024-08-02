@@ -1,76 +1,77 @@
+// Logger.cpp
 #include "Logger.h"
-#include "SafetySystem.h"
 #include <ArduinoJson.h>
 
-HardwareSerial& espSerial = Serial1;
+LogLevel Logger::currentLevel = LogLevel::INFO;
 
-bool Logger::isValidData(float wTemp, float aTemp, float pH, float turb, float oxy, float aflow) {
-    // Implement data validation logic here
-    return true;
+void Logger::log(LogLevel level, const String& message) {
+    if (level >= currentLevel) {
+        String prefix;
+        switch (level) {
+            case LogLevel::DEBUG: prefix = "DEBUG: "; break;
+            case LogLevel::INFO: prefix = "INFO: "; break;
+            case LogLevel::WARNING: prefix = "WARNING: "; break;
+            case LogLevel::ERROR: prefix = "ERROR: "; break;
+        }
+        Serial.println(prefix + message);
+    }
 }
 
-bool Logger::areStatusesValid(int apStat, int dpStat, int npStat, int bpStat, int smStat, int hpStat, int lgStat) {
-    // Implement status validation logic here
-    return true;
-}
+#include "Logger.h"
+#include "SensorController.h"
+#include "ActuatorController.h"
 
-void Logger::logData(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, PeristalticPump& basePump,
-    StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-    PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor, PHSensor& phSensor,
-    TurbiditySensor& turbiditySensor, OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
-    const String& currentProgram, const String& programStatus) {
+void Logger::logData(const String& currentProgram, const String& programStatus) {
+    // Read sensor values
+    float wTemp = SensorController::readSensor("waterTempSensor");
+    float aTemp = SensorController::readSensor("airTempSensor");
+    float pH = SensorController::readSensor("phSensor");
+    float turb = SensorController::readSensor("turbiditySensor");
+    float oxy = SensorController::readSensor("oxygenSensor");
+    float aflow = SensorController::readSensor("airFlowSensor");
 
-    float wTemp = waterTempSensor.readValue();
-    float aTemp = airTempSensor.readValue();
-    float pH = phSensor.readValue();
-    float turb = turbiditySensor.readValue();
-    float oxy = oxygenSensor.readValue();
-    float aflow = airFlowSensor.readValue();
+    // Read actuator statuses
+    bool apStat = ActuatorController::isActuatorRunning("airPump");
+    bool dpStat = ActuatorController::isActuatorRunning("drainPump");
+    bool npStat = ActuatorController::isActuatorRunning("nutrientPump");
+    bool bpStat = ActuatorController::isActuatorRunning("basePump");
+    bool smStat = ActuatorController::isActuatorRunning("stirringMotor");
+    bool hpStat = ActuatorController::isActuatorRunning("heatingPlate");
+    bool lgStat = ActuatorController::isActuatorRunning("ledGrowLight");
 
-    int apStat = airPump.isOn() ? 1 : 0;
-    int dpStat = drainPump.isOn() ? 1 : 0;
-    int npStat = nutrientPump.isOn() ? 1 : 0;
-    int bpStat = basePump.isOn() ? 1 : 0;
-    int smStat = stirringMotor.isOn() ? 1 : 0;
-    int hpStat = heatingPlate.isOn() ? 1 : 0;
-    int lgStat = ledGrowLight.isOn() ? 1 : 0;
+    // Create JSON document
+    StaticJsonDocument<256> doc;
 
-    if (isValidData(wTemp, aTemp, pH, turb, oxy, aflow) && areStatusesValid(apStat, dpStat, npStat, bpStat, smStat, hpStat, lgStat)) {
-        StaticJsonDocument<2048> doc;
+    // Populate JSON document with sensor data and statuses
+    doc["program"] = currentProgram;
+    doc["status"] = programStatus;
+    doc["airP"] = apStat ? 1 : 0;
+    doc["drainP"] = dpStat ? 1 : 0;
+    doc["nutrientP"] = npStat ? 1 : 0;
+    doc["baseP"] = bpStat ? 1 : 0;
+    doc["stirringM"] = smStat ? 1 : 0;
+    doc["heatingP"] = hpStat ? 1 : 0;
+    doc["led"] = lgStat ? 1 : 0;
+    doc["waterTemp"] = wTemp;
+    doc["airTemp"] = aTemp;
+    doc["pH"] = pH;
+    doc["turbidity"] = turb;
+    doc["oxygen"] = oxy;
+    doc["airFlow"] = aflow;
 
-        doc["program"] = currentProgram;
-        doc["status"] = programStatus;
-        doc["airP"] = apStat;
-        doc["drainP"] = dpStat;
-        doc["nutrientP"] = npStat;
-        doc["baseP"] = bpStat;
-        doc["stirringM"] = smStat;
-        doc["heatingP"] = hpStat;
-        doc["led"] = lgStat;
-        doc["waterTemp"] = wTemp;
-        doc["airTemp"] = aTemp;
-        doc["pH"] = pH;
-        doc["turbidity"] = turb;
-        doc["oxygen"] = oxy;
-        doc["airFlow"] = aflow;
+    // Serialize JSON to string
+    String output;
+    serializeJson(doc, output);
 
-        String data;
-        serializeJson(doc, data);
-        data += "\n";
-
-        espSerial.println(data);
-        Serial.println(data);
-    }
-    else {
-        Serial.println("Invalid sensor data or status detected.");
-    }
+    // Print JSON string to serial
+    Serial.println(output);
 }
 
 void Logger::logStartupParameters(const String& programType, int rateOrSpeed, int duration,
     float tempSetpoint, float phSetpoint, float doSetpoint, float nutrientConc,
     float baseConc, const String& experimentName, const String& comment) {
-
-    StaticJsonDocument<2048> doc;
+    
+    StaticJsonDocument<256> doc;
 
     doc["ev"] = "startup";
     doc["pt"] = programType;
@@ -84,73 +85,45 @@ void Logger::logStartupParameters(const String& programType, int rateOrSpeed, in
     doc["expN"] = experimentName;
     doc["comm"] = comment;
 
-    String data;
-    serializeJson(doc, data);
-    data += "\n";
-
-    espSerial.println(data);
-    Serial.println(data);
-}
-
-void Logger::logAlert(const String& message, AlertLevel level) {
-    String levelStr = (level == AlertLevel::WARNING) ? "WARNING" : "ALARM";
-    String alertMessage = levelStr + ": " + message;
-    Serial.println(alertMessage);
-    // You can add here the logic to send the alert to the ESP32 if needed
-}
-
-void Logger::logInfo(const String& message) {
-    Serial.println("INFO: " + message);
-}
-
-void Logger::logWarning(const String& message) {
-    Serial.println("WARNING: " + message);
-}
-
-void Logger::logError(const String& message) {
-    Serial.println("ERROR: " + message);
-}
-
-void Logger::logFermentationData(float waterTemp, float airTemp, float pH, float turbidity, float oxygenLevel, float airFlow,
-                                 float tempSetpoint, float phSetpoint, float doSetpoint,
-                                 float tempOutput, float phOutput, float doOutput) {
-    StaticJsonDocument<2048> doc;
-
-    doc["ev"] = "fermentation";
-    doc["wTemp"] = waterTemp;
-    doc["aTemp"] = airTemp;
-    doc["pH"] = pH;
-    doc["turb"] = turbidity;
-    doc["oxy"] = oxygenLevel;
-    doc["airFlow"] = airFlow;
-    doc["tSet"] = tempSetpoint;
-    doc["phSet"] = phSetpoint;
-    doc["doSet"] = doSetpoint;
-    doc["tOut"] = tempOutput;
-    doc["phOut"] = phOutput;
-    doc["doOut"] = doOutput;
-
-    String data;
-    serializeJson(doc, data);
-    data += "\n";
-
-    espSerial.println(data);
-    Serial.println(data);
+    String output;
+    serializeJson(doc, output);
+    Serial.println(output);
 }
 
 void Logger::logPIDData(const String& pidType, float setpoint, float input, float output) {
-    StaticJsonDocument<2048> doc;
-
+    StaticJsonDocument<128> doc;
+    
     doc["ev"] = "pid";
     doc["type"] = pidType;
     doc["set"] = setpoint;
     doc["in"] = input;
     doc["out"] = output;
-
-    String data;
-    serializeJson(doc, data);
-    data += "\n";
-
-    espSerial.println(data);
-    Serial.println(data);
+    
+    String jsonOutput;
+    serializeJson(doc, jsonOutput);
+    Serial.println(jsonOutput);
 }
+
+void Logger::setLogLevel(LogLevel level) {
+    currentLevel = level;
+}
+
+void Logger::logSensorData() {
+    log(LogLevel::INFO, "Water Temperature: " + String(SensorController::readSensor("waterTempSensor")) + " °C");
+    log(LogLevel::INFO, "Air Temperature: " + String(SensorController::readSensor("airTempSensor")) + " °C");
+    log(LogLevel::INFO, "pH: " + String(SensorController::readSensor("phSensor")));
+    log(LogLevel::INFO, "Turbidity: " + String(SensorController::readSensor("turbiditySensor")) + " voltage");
+    log(LogLevel::INFO, "Dissolved Oxygen: " + String(SensorController::readSensor("oxygenSensor")) + " mg/L");
+    log(LogLevel::INFO, "Air Flow: " + String(SensorController::readSensor("airFlowSensor")) + " L/min");
+}
+
+void Logger::logActuatorData() {
+    log(LogLevel::INFO, "Air Pump: " + String(ActuatorController::isActuatorRunning("Air Pump") ? "ON" : "OFF"));
+    log(LogLevel::INFO, "Drain Pump: " + String(ActuatorController::isActuatorRunning("Drain Pump") ? "ON" : "OFF"));
+    log(LogLevel::INFO, "Nutrient Pump: " + String(ActuatorController::isActuatorRunning("Nutrient Pump") ? "ON" : "OFF"));
+    log(LogLevel::INFO, "Base Pump: " + String(ActuatorController::isActuatorRunning("Base Pump") ? "ON" : "OFF"));
+    log(LogLevel::INFO, "Stirring Motor: " + String(ActuatorController::isActuatorRunning("Stirring Motor") ? "ON" : "OFF"));
+    log(LogLevel::INFO, "Heating Plate: " + String(ActuatorController::isActuatorRunning("Heating Plate") ? "ON" : "OFF"));
+    log(LogLevel::INFO, "LED Grow Light: " + String(ActuatorController::isActuatorRunning("LED Grow Light") ? "ON" : "OFF"));
+}
+

@@ -61,7 +61,8 @@ public:
      * @param doPin: Data Output (MISO) pin for SPI communication.
      * @param clkPin: Clock pin for SPI communication.
      */
-    PT100Sensor(int csPin, int diPin, int doPin, int clkPin);
+    PT100Sensor(int csPin, int diPin, int doPin, int clkPin, const char* name);
+    const char* getName() const override { return _name; }
 
     /*
      * Method to initialize the PT100 sensor.
@@ -76,6 +77,7 @@ public:
 
 private:
     Adafruit_MAX31865 _thermo; // MAX31865 sensor object
+    const char* _name;
 };
 
 #endif

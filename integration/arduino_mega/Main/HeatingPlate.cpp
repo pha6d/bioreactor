@@ -5,11 +5,17 @@
  */
 
 #include "HeatingPlate.h"
+#include "Logger.h"
 
-HeatingPlate::HeatingPlate(int relayPin, const char* id, bool isPWMCapable)
-    : _relayPin(relayPin), _id(id), status(false), _isPWMCapable(isPWMCapable) {
+HeatingPlate::HeatingPlate(int relayPin, bool isPWMCapable, const char* name)
+    : _relayPin(relayPin), status(false), _isPWMCapable(isPWMCapable), _name(name) {
     pinMode(_relayPin, OUTPUT);
     digitalWrite(_relayPin, LOW);
+}
+
+void HeatingPlate::begin() {
+    digitalWrite(_relayPin, LOW); // Ensure the heating plate is off at initialization
+    Logger::log(LogLevel::INFO, String(_name) + " initialized");
 }
 
 void HeatingPlate::control(bool state, int value) {
@@ -41,6 +47,7 @@ void HeatingPlate::controlWithPID(double pidOutput) {
 }
 
 void HeatingPlate::controlPWM(int value) {
+    int percentage = map(value, 0, 255, 0, 100);
     if (value > 0) {
         analogWrite(_relayPin, value);
         status = true;
@@ -48,15 +55,13 @@ void HeatingPlate::controlPWM(int value) {
         analogWrite(_relayPin, 0);
         status = false;
     }
-    Serial.print(_id);
-    Serial.println(status ? " is ON with power: " + String(map(value, 0, 255, 0, 100)) + "%" : " is OFF");
+    Logger::log(LogLevel::INFO, String(_name) + (status ? " is ON with power: " + String(percentage) + "%" : " is OFF"));
 }
 
 void HeatingPlate::controlOnOff(bool state) {
     digitalWrite(_relayPin, state ? HIGH : LOW);
     status = state;
-    Serial.print(_id);
-    Serial.println(status ? " is ON" : " is OFF");
+    Logger::log(LogLevel::INFO, String(_name) + (status ? " is ON" : " is OFF"));
 }
 
 void HeatingPlate::controlWithCycle(double percentPower) {
@@ -72,6 +77,5 @@ void HeatingPlate::controlWithCycle(double percentPower) {
         digitalWrite(_relayPin, LOW);
         status = false;
     }
-    Serial.print(_id);
-    Serial.println(" Duty Cycle: " + String(dutyCycle * 100) + "%");
+    Logger::log(LogLevel::INFO, String(_name) + " Duty Cycle: " + String(dutyCycle * 100) + "%");
 }

@@ -24,9 +24,15 @@ public:
      * @param pwmPin: The pin connected to the PWM input of the pump.
      * @param relayPin: The pin connected to the relay controlling the pump's power.
      * @param minPWM: The minimum PWM value required to run the pump.
-     * @param id: Identifier for the pump (for debugging purposes).
+     * @param name: Identifier for the pump (for debugging purposes).
      */
-    DCPump(int pwmPin, int relayPin, int minPWM, const char* id);
+    DCPump(int pwmPin, int relayPin, int minPWM, const char* name);
+
+    /*
+     * Method to initialize the pump.
+     * This method is called to set up the pump before it's first used.
+     */
+    void begin() override;
 
     /*
      * Method to control the pump.
@@ -41,19 +47,30 @@ public:
      */
     bool isOn() const override;
 
-    const char* getName() const override { return _id; }
+    /*
+     * Method to get the name of the pump.
+     * @return The name of the pump.
+     */
+    const char* getName() const override { return _name; }
 
+    /*
+     * Method to get the volume of liquid removed by the pump.
+     * @return The volume removed in milliliters.
+     */
     float getVolumeRemoved() const { return volumeRemoved; }
 
+    /*
+     * Method to reset the volume removed counter.
+     */
     void resetVolumeRemoved() { volumeRemoved = 0; }
 
 private:
     int _pwmPin;    // PWM pin
     int _relayPin;  // Relay pin
     int _minPWM;    // Minimum PWM value
-    const char* _id; // Identifier for the pump
+    const char* _name;
     bool status; // Track the state of the pump
-    float volumeRemoved;
+    float volumeRemoved; // Track the volume removed by the pump
 };
 
 #endif

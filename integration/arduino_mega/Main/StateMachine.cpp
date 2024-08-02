@@ -1,9 +1,9 @@
+// StateMachine.cpp
 #include "StateMachine.h"
-
+#include <MemoryFree.h>
 
 StateMachine::StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager& volumeManager)
-    : programCount(0),
-      currentState(ProgramState::IDLE),
+    : currentState(ProgramState::IDLE),
       currentProgram(nullptr),
       logger(logger),
       pidManager(pidManager),
@@ -11,14 +11,15 @@ StateMachine::StateMachine(Logger& logger, PIDManager& pidManager, VolumeManager
 {
 }
 
-void StateMachine::addProgram(ProgramBase* program) {
-    if (programCount < MAX_PROGRAMS) {
-        programs[programCount++] = program;
+void StateMachine::addProgram(const String& name, ProgramBase* program) {
+    if (programs.getSize() < MAX_PROGRAMS) {
+        programs.insert(name, program);
     } else {
-        logger.logError("Maximum number of programs reached");
+        logger.log(LogLevel::ERROR, "Maximum number of programs reached");
     }
 }
 
+/*
 void StateMachine::update() {
     if (currentProgram && currentState == ProgramState::RUNNING) {
         currentProgram->update();
@@ -27,38 +28,224 @@ void StateMachine::update() {
         }
     }
 }
+*/
 
-void StateMachine::startProgram(const String& programName) {
-    for (int i = 0; i < programCount; i++) {
-        if (programs[i]->getName() == programName) {
-            if (currentProgram) {
-                stopProgram(currentProgram->getName());
-            }
-            currentProgram = programs[i];
-            transitionToState(ProgramState::RUNNING);
-            logger.logInfo("Started program: " + programName);
-            return;
+void StateMachine::update() {
+    if (currentProgram && currentState == ProgramState::RUNNING) {
+        currentProgram->update();
+        if (!currentProgram->isRunning()) {
+            transitionToState(ProgramState::COMPLETED);
+            currentProgram = nullptr;  // Ajoutez cette ligne
+            Logger::log(LogLevel::INFO, "Program completed and cleared");
         }
     }
-    logger.logWarning("Program not found: " + programName);
 }
 
-void StateMachine::stopProgram(const String& programName) {
-    if (currentProgram && currentProgram->getName() == programName) {
-        currentProgram->stop();
-        transitionToState(ProgramState::STOPPED);
-        logger.logInfo("Stopped program: " + programName);
+
+void StateMachine::startProgram(const String& programName, const String& command) {
+    ProgramBase** program = programs.find(programName);
+    if (program) {
+        //stopProgram();
+        currentProgram = *program;
+        currentProgram->start(command);
+        transitionToState(ProgramState::RUNNING);
+        logger.log(LogLevel::INFO, "Started program: " + programName);
+    } else {
+        logger.log(LogLevel::WARNING, "Program not found: " + programName);
     }
 }
+
+/*
+// This method stops the currently running program if it matches the given program name
+void StateMachine::stopProgram(const String& programName) {
+  // Check if there is a current program running and if its name matches the given program name
+    if (currentProgram && currentProgram->getName() == programName) {
+      // Stop the current program by calling its stop method
+        currentProgram->stop();
+
+        currentProgram = nullptr;
+        // Transition the state machine to the STOPPED state
+        transitionToState(ProgramState::STOPPED);
+        // Log the action of stopping the program
+        Logger::log(LogLevel::INFO, "Stopped program: " + programName);
+    }
+}
+*/
+
+// This method stops the currently running program if it matches the given program name
+void StateMachine::stopProgram(const String& programName) {   //TEST
+  // Check if there is a current program running and if its name matches the given program name
+    if (currentProgram && currentProgram->getName() == programName) {
+      // Stop the current program by calling its stop method
+        currentProgram->stop();
+
+        currentProgram = nullptr;
+        // Transition the state machine to the STOPPED state
+        transitionToState(ProgramState::STOPPED);
+        // Log the action of stopping the program
+        Logger::log(LogLevel::INFO, "Stopped program: " + programName);
+    }
+}
+
 
 void StateMachine::stopAllPrograms() {
-    for (int i = 0; i < programCount; i++) {
-        programs[i]->stop();
+    if (currentProgram) {
+        Logger::log(LogLevel::INFO, "Stopping current program: " + currentProgram->getName());
+        currentProgram->stop();
+        currentProgram = nullptr;  // Ajoutez cette ligne
+        transitionToState(ProgramState::STOPPED);
+        Logger::log(LogLevel::INFO, "All programs stopped");
+        //Logger::log(LogLevel::INFO, "Current state: " + programStateToString(getCurrentState()));
+        Logger::log(LogLevel::INFO, "Current state: " + String(static_cast<int>(getCurrentState())));
+        Logger::log(LogLevel::INFO, "Current program: None");  // Modifiez cette ligne
     }
-    currentProgram = nullptr;
-    transitionToState(ProgramState::STOPPED);
-    logger.logInfo("All programs stopped");
 }
+
+
+/*
+void StateMachine::stopAllPrograms() {
+    Logger::log(LogLevel::INFO, "Entering stopAllPrograms");
+    if (currentProgram) {
+        Logger::log(LogLevel::INFO, "Current program: " + currentProgram->getName());
+        Logger::log(LogLevel::INFO, "About to stop current program");
+        currentProgram->stop();
+        Logger::log(LogLevel::INFO, "Current program stopped successfully");
+        currentProgram = nullptr;
+        Logger::log(LogLevel::INFO, "currentProgram set to nullptr");
+        transitionToState(ProgramState::STOPPED);
+        Logger::log(LogLevel::INFO, "Transitioned to STOPPED state");
+    } else {
+        Logger::log(LogLevel::INFO, "No current program to stop");
+    }
+    Logger::log(LogLevel::INFO, "About to stop all actuators");
+    ActuatorController::stopAllActuators();
+    Logger::log(LogLevel::INFO, "All actuators stopped");
+    Logger::log(LogLevel::INFO, "Exiting stopAllPrograms");
+}
+*/
+
+
+/*
+
+    // Iterate through all registered programs and stop them
+    Logger::log(LogLevel::INFO, "Iterating through all programs");
+    print(freeMemory());
+    for (int i = 0; i < programs.getSize(); i++) {
+        // Get the program at the current index
+        print(freeMemory());
+        ProgramBase* program = programs.valueAt(i);  // Changed from getByIndex to valueAt
+        print(freeMemory());
+        if (program) {
+            // Stop the program if it exists
+            print(freeMemory());
+            program->stop();
+
+        }
+    }
+    // Reset the current program pointer
+    print(freeMemory());
+    currentProgram = nullptr;
+    print(freeMemory());
+    // Transition the state machine to the STOPPED state
+    transitionToState(ProgramState::STOPPED);
+    print(freeMemory());
+    // Log that all programs have been stopped
+    Logger::log(LogLevel::INFO, "All programs stopped");
+    
+}
+*/
+
+
+
+
+
+/*
+void StateMachine::stopAllPrograms() {
+
+    Logger::log(LogLevel::INFO, "Entering stopAllPrograms"); ///
+    // Stop the currently running program, if any
+    if (currentProgram) {
+        Logger::log(LogLevel::INFO, "Stopping current program: " + currentProgram->getName()); ///
+        currentProgram->stop();
+    }
+
+
+
+    // Iterate through all registered programs and stop them
+    Logger::log(LogLevel::INFO, "Iterating through all programs");
+    print(freeMemory());
+    for (int i = 0; i < programs.getSize(); i++) {
+        // Get the program at the current index
+        print(freeMemory());
+        ProgramBase* program = programs.valueAt(i);  // Changed from getByIndex to valueAt
+        print(freeMemory());
+        if (program) {
+            // Stop the program if it exists
+            print(freeMemory());
+            program->stop();
+
+        }
+    }
+    // Reset the current program pointer
+    print(freeMemory());
+    currentProgram = nullptr;
+    print(freeMemory());
+    // Transition the state machine to the STOPPED state
+    transitionToState(ProgramState::STOPPED);
+    print(freeMemory());
+    // Log that all programs have been stopped
+    Logger::log(LogLevel::INFO, "All programs stopped");
+    
+}
+*/
+
+
+/*
+void StateMachine::stopAllPrograms() {
+
+    Logger::log(LogLevel::INFO, "Iterating through all programs");
+    Serial.print("Free memory: ");
+    Serial.println(freeMemory());
+
+    for (int i = 0; i < programs.getSize(); i++) {
+        // Get the program at the current index
+        Serial.print("Free memory before getting program: ");
+        Serial.println(freeMemory());
+        
+        ProgramBase* program = programs.valueAt(i);  // Changed from getByIndex to valueAt
+        Serial.print("Free memory after getting program: ");
+        Serial.println(freeMemory());
+
+        if (program) {
+            // Stop the program if it exists
+            Serial.print("Free memory before stopping program: ");
+            Serial.println(freeMemory());
+            
+            program->stop();
+            Serial.print("Free memory after stopping program: ");
+            Serial.println(freeMemory());
+        }
+    }
+    // Reset the current program pointer
+    Serial.print("Free memory before resetting current program: ");
+    Serial.println(freeMemory());
+    
+    currentProgram = nullptr;
+    
+    Serial.print("Free memory after resetting current program: ");
+    Serial.println(freeMemory());
+
+    // Transition the state machine to the STOPPED state
+    transitionToState(ProgramState::STOPPED);
+    
+    Serial.print("Free memory after transitioning state: ");
+    Serial.println(freeMemory());
+
+    // Log that all programs have been stopped
+    Logger::log(LogLevel::INFO, "All programs stopped");
+}
+*/
+
 
 ProgramState StateMachine::getCurrentState() const {
     return currentState;
@@ -71,141 +258,7 @@ String StateMachine::getCurrentProgram() const {
 void StateMachine::transitionToState(ProgramState newState) {
     if (newState != currentState) {
         currentState = newState;
-        logger.logInfo("State changed to: " + String(static_cast<int>(currentState)));
-    }
-}
-
-void StateMachine::configureDrain(DCPump& drainPump, int rate, int duration) {
-    if (currentProgram && currentProgram->getName() == "Drain") {
-        DrainProgram* program = static_cast<DrainProgram*>(currentProgram);
-        program->configure(drainPump, rate, duration);
-    }
-}
-
-void StateMachine::configureMix(StirringMotor& stirringMotor, int speed) {
-    if (currentProgram && currentProgram->getName() == "Mix") {
-        MixProgram* program = static_cast<MixProgram*>(currentProgram);
-        program->configure(stirringMotor, speed);
-    }
-}
-
-void StateMachine::configureFermentation(DCPump& airPump, DCPump& drainPump,
-                                         PeristalticPump& nutrientPump, PeristalticPump& basePump,
-                                         StirringMotor& stirringMotor, HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-                                         PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
-                                         PHSensor& phSensor, TurbiditySensor& turbiditySensor,
-                                         OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
-                                         float tempSetpoint, float phSetpoint, float doSetpoint,
-                                         float nutrientConc, float baseConc, int duration,
-                                         const String& experimentName, const String& comment) {
-    if (currentProgram && currentProgram->getName() == "Fermentation") {
-        FermentationProgram* program = static_cast<FermentationProgram*>(currentProgram);
-        program->configure(airPump, drainPump, nutrientPump, basePump, stirringMotor,
-                           heatingPlate, ledGrowLight, waterTempSensor, airTempSensor,
-                           phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-                           tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc,
-                           duration, experimentName, comment);
-    }
-}
-
-void StateMachine::configurePIDTest(const String& pidType, double setpoint) {
-    if (currentProgram && currentProgram->getName() == "PIDTest") {
-        PIDTestProgram* program = static_cast<PIDTestProgram*>(currentProgram);
-        program->configure(pidType, setpoint);
-    }
-}
-
-void StateMachine::startDrain(DCPump& drainPump, int rate, int duration) {
-    startProgram("Drain");
-    configureDrain(drainPump, rate, duration);
-    if (currentProgram && currentProgram->getName() == "Drain") {
-        currentProgram->begin();
-    }
-}
-
-void StateMachine::startMix(StirringMotor& stirringMotor, int speed) {
-    startProgram("Mix");
-    configureMix(stirringMotor, speed);
-    if (currentProgram && currentProgram->getName() == "Mix") {
-        currentProgram->begin();
-    }
-}
-
-void StateMachine::startTests(DCPump& airPump, DCPump& drainPump, StirringMotor& stirringMotor, 
-                              PeristalticPump& nutrientPump, PeristalticPump& basePump, 
-                              HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-                              PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
-                              PHSensor& phSensor, TurbiditySensor& turbiditySensor, 
-                              OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor) {
-    startProgram("TestActuators");
-    if (currentProgram && currentProgram->getName() == "TestActuators") {
-        TestActuatorsProgram* program = static_cast<TestActuatorsProgram*>(currentProgram);
-        program->begin();
-        program->configure(airPump, drainPump, stirringMotor, nutrientPump, basePump, 
-                           heatingPlate, ledGrowLight, waterTempSensor, airTempSensor,
-                           phSensor, turbiditySensor, oxygenSensor, airFlowSensor);
-    }
-}
-
-void StateMachine::startFermentation(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump, 
-                                     PeristalticPump& basePump, StirringMotor& stirringMotor, 
-                                     HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight,
-                                     PT100Sensor& waterTempSensor, DS18B20TemperatureSensor& airTempSensor,
-                                     PHSensor& phSensor, TurbiditySensor& turbiditySensor, 
-                                     OxygenSensor& oxygenSensor, AirFlowSensor& airFlowSensor,
-                                     float tempSetpoint, float phSetpoint, float doSetpoint,
-                                     float nutrientConc, float baseConc, int duration,
-                                     const String& experimentName, const String& comment) {
-    logger.logInfo("Starting fermentation process...");
-    startProgram("Fermentation");
-    configureFermentation(airPump, drainPump, nutrientPump, basePump, stirringMotor,
-                          heatingPlate, ledGrowLight, waterTempSensor, airTempSensor,
-                          phSensor, turbiditySensor, oxygenSensor, airFlowSensor,
-                          tempSetpoint, phSetpoint, doSetpoint, nutrientConc, baseConc,
-                          duration, experimentName, comment);
-    if (currentProgram && currentProgram->getName() == "Fermentation") {
-        currentProgram->begin();
-    }
-}
-
-void StateMachine::startPIDTest(const String& pidType, double setpoint) {
-    startProgram("PIDTest");
-    if (currentProgram && currentProgram->getName() == "PIDTest") {
-        PIDTestProgram* program = static_cast<PIDTestProgram*>(currentProgram);
-        program->begin();
-        program->configure(pidType, setpoint);
-    }
-}
-
-void StateMachine::stopAll(DCPump& airPump, DCPump& drainPump, PeristalticPump& nutrientPump,
-                           PeristalticPump& basePump, StirringMotor& stirringMotor,
-                           HeatingPlate& heatingPlate, LEDGrowLight& ledGrowLight) {
-    logger.logInfo("Stopping all processes...");
-    airPump.control(false, 0);
-    drainPump.control(false, 0);
-    nutrientPump.control(false, 0);
-    basePump.control(false, 0);
-    stirringMotor.control(false, 0);
-    heatingPlate.control(false);
-    ledGrowLight.control(false);
-
-    stopAllPrograms();
-}
-
-void StateMachine::startActuatorTest(const String& actuatorName, float value, int duration) {
-    startProgram("TestActuators");
-    if (currentProgram && currentProgram->getName() == "TestActuators") {
-        TestActuatorsProgram* program = static_cast<TestActuatorsProgram*>(currentProgram);
-        program->begin();
-        program->runIndividualTest(actuatorName, value, duration);
-    }
-}
-
-void StateMachine::startSensorTest() {
-    startProgram("TestActuators");
-    if (currentProgram && currentProgram->getName() == "TestActuators") {
-        TestActuatorsProgram* program = static_cast<TestActuatorsProgram*>(currentProgram);
-        program->startSensorTest();
+        Logger::log(LogLevel::INFO, "State changed to: " + String(static_cast<int>(currentState)));
     }
 }
 

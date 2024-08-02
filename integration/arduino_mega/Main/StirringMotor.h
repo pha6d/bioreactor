@@ -28,8 +28,10 @@ public:
      * @param minRPM: Minimum RPM of the motor (default 390).
      * @param maxRPM: Maximum RPM of the motor (default 1500).
      */
-    StirringMotor(int pwmPin, int relayPin, const char* id, int minRPM = 390, int maxRPM = 1500);
+    StirringMotor(int pwmPin, int relayPin, int minRPM, int maxRPM, const char* name);
 
+    void begin() override;
+    
     /*
      * Method to control the stirring motor.
      * @param state: Boolean indicating whether the motor should be on or off.
@@ -43,7 +45,7 @@ public:
      */
     bool isOn() const override;
 
-    const char* getName() const override { return _id; }
+    const char* getName() const override { return _name; }
 
     /*
      * Method to get the minimum RPM of the motor.
@@ -57,11 +59,12 @@ public:
      */
     int getMaxRPM() const { return _maxRPM; }
 
+
 private:
     int _pwmPin;   // PWM pin
     int _relayPin; // Relay pin
     bool status;   // Track the state of the motor
-    const char* _id;
+    const char* _name;
     int _minRPM;   // Minimum RPM
     int _maxRPM;   // Maximum RPM
 

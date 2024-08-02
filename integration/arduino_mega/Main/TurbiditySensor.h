@@ -28,12 +28,12 @@ public:
      * Constructor for TurbiditySensor.
      * @param pin: The analog pin connected to the turbidity sensor.
      */
-    TurbiditySensor(int pin);
+    TurbiditySensor(int pin, const char* name);
 
     /*
      * Method to initialize the turbidity sensor.
      */
-    void begin();
+    void begin() override;
 
     /*
      * Method to read the turbidity value from the sensor.
@@ -41,8 +41,11 @@ public:
      */
     float readValue();
 
+    const char* getName() const override { return _name; }
+
 private:
     int _pin; // Analog pin connected to the turbidity sensor
+    const char* _name;
 };
 
 #endif

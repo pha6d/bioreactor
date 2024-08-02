@@ -42,7 +42,7 @@ public:
      * Constructor for PHSensor.
      * @param pin: The analog pin connected to the pH sensor.
      */
-    PHSensor(int pin);
+    PHSensor(int pin, const char* name);
 
     /*
      * Method to initialize the pH sensor.
@@ -62,11 +62,14 @@ public:
      */
     void calibrate(float voltage, float temperature);
 
+    const char* getName() const override { return _name; }
+
 private:
     int _pin;          // Analog pin connected to the pH sensor
     DFRobot_PH _ph;    // DFRobot_PH object for pH calculation
     float _voltage;    // Voltage read from the pH sensor
     float _temperature; // Current temperature for compensation
+    const char* _name;
 };
 
 #endif

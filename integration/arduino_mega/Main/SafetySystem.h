@@ -1,35 +1,30 @@
+// SafetySystem.h
 #ifndef SAFETY_SYSTEM_H
 #define SAFETY_SYSTEM_H
 
 #include <Arduino.h>
-
-// Forward declaration
-class Logger;
-
-enum class AlertLevel {
-    WARNING,
-    ALARM
-};
+#include "Logger.h"
+#include "SensorController.h"
+#include "ActuatorController.h"
 
 class SafetySystem {
 public:
     SafetySystem(float totalVolume, float maxVolumePercent, float minVolume);
-    void checkLimits(float waterTemp, float airTemp, float pH, float dissolvedOxygen, float turbidity, float currentVolume);
+    void checkLimits();
     bool shouldStop() const { return stopRequired; }
-    void setLogger(Logger* logger) { this->logger = logger; }
-    void setAlarmEnabled(bool enabled) { alarmEnabled = enabled; }
-    void setWarningEnabled(bool enabled) { warningEnabled = enabled; }
+    void setLogger(Logger* logger) { this->logger = logger; } //This allows the SafetySystem to use the same logger as the rest of this application, ensuring consistent logging.
+    void parseCommand(const String& command);
     void setCheckInterval(unsigned long interval) { checkInterval = interval; }
 
 private:
-    void checkWaterTemperature(float temp);
-    void checkAirTemperature(float temp);
-    void checkPH(float pH);
-    void checkDissolvedOxygen(float do_percent);
-    void checkVolume(float volume);
-    void checkTurbidity(float turbidity);
+    void checkWaterTemperature();
+    void checkAirTemperature();
+    void checkPH();
+    void checkDissolvedOxygen();
+    void checkVolume();
+    void checkTurbidity();
 
-    void logAlert(const String& message, AlertLevel level);
+    void logAlert(const String& message, LogLevel level);
 
     float totalVolume;
     float maxVolumePercent;

@@ -1,28 +1,28 @@
+// DrainProgram.h
 #ifndef DRAIN_PROGRAM_H
 #define DRAIN_PROGRAM_H
 
 #include "ProgramBase.h"
-#include "DCPump.h"
+#include "ActuatorController.h"
+#include "Logger.h"
 
 class DrainProgram : public ProgramBase {
 public:
     DrainProgram();
-    void configure(DCPump& pump, int rate, int duration);
-    void begin() override;
+    void start(const String& command) override;
     void update() override;
     void pause() override;
     void resume() override;
     void stop() override;
-    bool isRunning() const override;
-    String getName() const override { return "Drain"; }
+    bool isRunning() const override { return _isRunning; }
+    bool isPaused() const override { return _isPaused; }
+    String getName() const { return "Drain"; }
+    void parseCommand(const String& command) override;
 
 private:
-    DCPump* drainPump;
     int rate;
     int duration;
     unsigned long startTime;
-    bool running;
-    bool paused;
 };
 
 #endif // DRAIN_PROGRAM_H

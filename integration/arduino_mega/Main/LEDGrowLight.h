@@ -21,9 +21,15 @@ public:
     /*
      * Constructor for LEDGrowLight.
      * @param relayPin: The pin connected to the relay controlling the LED grow light.
-     * @param id: Identifier for the LED grow light (for debugging purposes).
+     * @param name: Identifier for the LED grow light (for debugging purposes).
      */
-    LEDGrowLight(int relayPin, const char* id);
+    LEDGrowLight(int relayPin, const char* name);
+
+    /*
+     * Method to initialize the LED grow light.
+     * This method is called to set up the LED grow light before it's first used.
+     */
+    void begin() override;
 
     /*
      * Method to control the LED grow light.
@@ -38,11 +44,15 @@ public:
      */
     bool isOn() const override;
 
-    const char* getName() const override { return _id; }
+    /*
+     * Method to get the name of the LED grow light.
+     * @return The name of the LED grow light.
+     */
+    const char* getName() const override { return _name; }
 
 private:
     int _relayPin;   // Relay pin
-    const char* _id; // Identifier for the LED grow light
+    const char* _name;
     bool status;     // Track the state of the LED grow light
     int intensity;   // Current intensity of the LED grow light (0-100)
 };

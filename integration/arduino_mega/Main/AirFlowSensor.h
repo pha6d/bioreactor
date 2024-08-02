@@ -39,12 +39,12 @@ public:
      * Constructor for AirFlowSensor.
      * @param pin: The digital pin connected to the air flow meter's signal wire.
      */
-    AirFlowSensor(int pin);
+    AirFlowSensor(int pin, const char* name);
 
     /*
      * Method to initialize the air flow meter sensor.
      */
-    void begin();
+    void begin() override;
 
     /*
      * Method to read the flow rate from the sensor.
@@ -57,6 +57,8 @@ public:
      */
     static void countPulses();
 
+    const char* getName() const override { return _name; }
+
 private:
     int _pin; // Digital pin connected to the air flow meter's signal wire
     volatile unsigned long _pulseCount; // Pulse count from the air flow meter
@@ -65,6 +67,7 @@ private:
     static const float _pulsesPerLiter; // Pulses per liter as per the sensor's specification
 
     static AirFlowSensor* instance; // Static instance for the interrupt handler
+    const char* _name;
 };
 
 #endif

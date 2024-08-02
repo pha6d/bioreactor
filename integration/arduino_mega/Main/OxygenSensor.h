@@ -37,7 +37,7 @@ public:
      * @param pin: The analog pin connected to the DO sensor.
      * @param tempSensor: Pointer to a PT100 sensor object for temperature compensation.
      */
-    OxygenSensor(int pin, PT100Sensor* tempSensor);
+    OxygenSensor(int pin, PT100Sensor* tempSensor, const char* name);
 
     /*
      * Method to initialize the DO sensor.
@@ -48,12 +48,14 @@ public:
      * Method to read the DO value from the sensor.
      * @return: The DO concentration in mg/L.
      */
-    float readValue();
+    float readValue() override;
 
     /*
      * Method for calibration
      */ 
     void calibrate(); 
+
+    const char* getName() const override { return _name; }
     
 private:
     int _pin;                       // Analog pin connected to the DO sensor
@@ -76,6 +78,8 @@ private:
 
     // Table of saturated dissolved oxygen levels for different temperatures
     static const uint16_t DO_Table[41];
+
+    const char* _name;
 };
 
 #endif

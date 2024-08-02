@@ -6,12 +6,21 @@
  */
 
 #include "DCPump.h"
+#include "Logger.h"
 
- // Constructor for DCPump
-DCPump::DCPump(int pwmPin, int relayPin, int minPWM, const char* id)
-    : _pwmPin(pwmPin), _relayPin(relayPin), _minPWM(minPWM), _id(id), status(false) {
+// Constructor for DCPump
+DCPump::DCPump(int pwmPin, int relayPin, int minPWM, const char* name)
+    : _pwmPin(pwmPin), _relayPin(relayPin), _minPWM(minPWM), status(false), _name(name), volumeRemoved(0) {
     pinMode(_pwmPin, OUTPUT); // Set PWM pin as output
     pinMode(_relayPin, OUTPUT); // Set relay pin as output
+}
+
+// Method to initialize the pump
+void DCPump::begin() {
+    // Ensure the pump is off at initialization
+    digitalWrite(_relayPin, LOW);
+    analogWrite(_pwmPin, 0);
+    Logger::log(LogLevel::INFO, String(_name) + " initialized");
 }
 
 // Method to control the pump
@@ -21,22 +30,17 @@ void DCPump::control(bool state, int value) {
         analogWrite(_pwmPin, pwmValue); // Set the PWM value
         digitalWrite(_relayPin, HIGH); // Turn on the relay
         status = true; // Set the status to on
-        Serial.print(_id); // Print the pump identifier
-        Serial.print(" is ON, Speed set to: ");
-        Serial.println(value);
-    }
-    if (state && value > 0) {
-        // Assuming a linear relationship between value and flow rate
+        Logger::log(LogLevel::INFO, String(_name) + " is ON, Speed set to: " + String(value));
+
+        // Calculate volume removed
         float flowRate = value * 0.1;  // Example: 0.1 ml/min per unit of value
         float duration = 1.0 / 60.0;  // 1 second in minutes
         volumeRemoved += flowRate * duration;
-    }
-    else {
+    } else {
         analogWrite(_pwmPin, 0); // Set PWM value to 0
         digitalWrite(_relayPin, LOW); // Turn off the relay
         status = false; // Set the status to off
-        Serial.print(_id); // Print the pump identifier
-        Serial.println(" is OFF");
+        Logger::log(LogLevel::INFO, String(_name) + " is OFF");
     }
 }
 

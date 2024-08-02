@@ -1,60 +1,60 @@
-/*
- * MixProgram.cpp
- * This file implements the MixProgram class defined in MixProgram.h.
- * It controls the mixing process of the bioreactor.
- */
-
+// MixProgram.cpp
 #include "MixProgram.h"
+#include <Arduino.h>
 
-MixProgram::MixProgram() : stirringMotor(nullptr), speed(0), running(false), paused(false) {}
+MixProgram::MixProgram() : speed(0) {}
 
-void MixProgram::configure(StirringMotor& motor, int speed) {
-    this->stirringMotor = &motor;
-    this->speed = speed;
-}
-
-void MixProgram::begin() {
-    this->running = true;
-    this->paused = false;
-    
-    if (stirringMotor) {
-        stirringMotor->control(true, speed);
-        Serial.println("Mixing started with " + String(stirringMotor->getName()) + " at speed: " + String(speed));
+void MixProgram::start(const String& command) {
+    // Parse command: "mix <speed>"
+    int spaceIndex = command.indexOf(' ');
+    if (spaceIndex != -1) {
+        speed = command.substring(spaceIndex + 1).toInt();
+        
+        _isRunning = true;
+        _isPaused = false;
+        
+        ActuatorController::runActuator("stirringMotor", speed, 0); // 0 for continuous operation
+        Logger::log(LogLevel::INFO, "Mixing started at speed: " + String(speed));
     } else {
-        Serial.println("Error: Stirring motor not configured");
+        Logger::log(LogLevel::ERROR, "Invalid mix command format");
     }
 }
 
 void MixProgram::update() {
-    // Le processus de mélange se poursuit continuellement jusqu'à ce qu'il soit arrêté
-    // Aucune logique supplémentaire n'est nécessaire ici
+    // The mixing process continues until it's stopped
+    // No additional logic needed here
 }
 
 void MixProgram::pause() {
-    if (running && !paused) {
-        stirringMotor->control(false, 0);
-        paused = true;
-        Serial.println("Mixing paused");
+    if (_isRunning && !_isPaused) {
+        ActuatorController::stopActuator("stirringMotor");
+        _isPaused = true;
+        Logger::log(LogLevel::INFO, "Mixing paused");
     }
 }
 
 void MixProgram::resume() {
-    if (running && paused) {
-        stirringMotor->control(true, speed);
-        paused = false;
-        Serial.println("Mixing resumed");
+    if (_isRunning && _isPaused) {
+        ActuatorController::runActuator("stirringMotor", speed, 0);
+        _isPaused = false;
+        Logger::log(LogLevel::INFO, "Mixing resumed");
     }
 }
 
 void MixProgram::stop() {
-    if (running) {
-        stirringMotor->control(false, 0);
-        running = false;
-        paused = false;
-        Serial.println("Mixing stopped");
+    if (_isRunning) {
+        ActuatorController::stopActuator("stirringMotor");
+        _isRunning = false;
+        _isPaused = false;
+        Logger::log(LogLevel::INFO, "Mixing stopped");
     }
 }
 
-bool MixProgram::isRunning() const {
-    return running;
+void MixProgram::parseCommand(const String& command) {
+    int spaceIndex = command.indexOf(' ');
+    if (spaceIndex != -1) {
+        speed = command.substring(spaceIndex + 1).toInt();
+    } else {
+        Logger::log(LogLevel::ERROR, "Invalid mix command format");
+    }
 }

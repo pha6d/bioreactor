@@ -17,10 +17,16 @@ public:
     /*
      * Constructor for HeatingPlate.
      * @param relayPin: The pin connected to the relay or PWM pin for the heating plate.
-     * @param id: Identifier for the heating plate (for debugging purposes).
      * @param isPWMCapable: Boolean indicating if the hardware supports PWM control.
+     * @param name: Identifier for the heating plate (for debugging purposes).
      */
-    HeatingPlate(int relayPin, const char* id, bool isPWMCapable = false);
+    HeatingPlate(int relayPin, bool isPWMCapable, const char* name);
+
+    /*
+     * Method to initialize the heating plate.
+     * This method is called to set up the heating plate before it's first used.
+     */
+    void begin() override;
 
     /*
      * Method to control the heating plate.
@@ -35,7 +41,11 @@ public:
      */
     bool isOn() const override;
 
-    const char* getName() const override { return _id; }
+    /*
+     * Method to get the name of the heating plate.
+     * @return The name of the heating plate.
+     */
+    const char* getName() const override { return _name; }
 
     /*
      * Method to control the heating plate using PID output.
@@ -45,12 +55,12 @@ public:
 
 private:
     int _relayPin;   // Relay or PWM pin
-    const char* _id; // Identifier for the heating plate
+    const char* _name;
     bool status;     // Track the state of the heating plate
     bool _isPWMCapable; // Indicates if the hardware supports PWM
 
     // For cycle control (non-PWM hardware)
-    unsigned long cycleTime = 10000; // 10 seconds per cycle
+    unsigned long cycleTime = 10000; // 10 seconds per cycle = In process chemistry, it offers a good compromise between control accuracy and relay life. It is not necessary to increase it in most cases.
     unsigned long lastCycleStart = 0;
     double dutyCycle = 0; // 0 to 1
 

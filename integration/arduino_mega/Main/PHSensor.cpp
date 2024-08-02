@@ -5,13 +5,15 @@
  */
 
 #include "PHSensor.h"
+#include "Logger.h"
 
 // Constructor for PHSensor
-PHSensor::PHSensor(int pin) : _pin(pin) {}
+PHSensor::PHSensor(int pin, const char* name) : _pin(pin), _name(name) {}
 
 // Method to initialize the pH sensor
 void PHSensor::begin() {
     _ph.begin();
+    Logger::log(LogLevel::INFO, String(_name) + " initialized");
 }
 
 // Method to read the pH value from the sensor

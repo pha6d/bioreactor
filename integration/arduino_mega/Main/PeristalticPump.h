@@ -28,7 +28,7 @@ public:
      * @param maxFlowRate: The maximum flow rate of the pump in ml/min.
      * @param id: Identifier for the pump (for debugging purposes).
      */
-    PeristalticPump(uint8_t dacAddress, int relayPin, float maxFlowRate, const char* id);
+    PeristalticPump(uint8_t dacAddress, int relayPin, float _minFlowRate, float maxFlowRate, const char* name);
 
     /*
      * Initializes the peristaltic pump by setting up the relay pin and the DAC.
@@ -48,19 +48,21 @@ public:
      */
     bool isOn() const override;
 
-    const char* getName() const override { return _id; }
+    const char* getName() const override { return _name; }
 
     float getVolumeAdded() const { return volumeAdded; }
     void resetVolumeAdded() { volumeAdded = 0; }
 
     float getMaxFlowRate() const { return _maxFlowRate; }
+    float getMinFlowRate() const { return _minFlowRate; }
 
 
 private:
     uint8_t _dacAddress;    // I2C address of the DAC
     int _relayPin;          // Relay pin
     float _maxFlowRate;     // Maximum flow rate of the pump
-    const char* _id;        // Identifier for the pump
+    float _minFlowRate;     // Minimum flow rate of the pump
+    const char* _name;
     Adafruit_MCP4725 _dac;  // DAC instance
     bool status;            // Track the state of the pump
     float volumeAdded;      // Track the volume added by the pump

@@ -1,56 +1,53 @@
+// PIDManager.h
 #ifndef PID_MANAGER_H
 #define PID_MANAGER_H
 
 #include <PID_v1.h>
-#include "StirringMotor.h"
-#include "HeatingPlate.h"
-#include "PeristalticPump.h"
-#include "DCPump.h"
-#include "PT100Sensor.h"
-#include "PHSensor.h"
-#include "OxygenSensor.h"
+#include "ActuatorController.h"
+#include "SensorController.h"
+#include "VolumeManager.h"
 
 class PIDManager {
 public:
-    PIDManager(StirringMotor* stirringMotor, HeatingPlate* heatingPlate);
+    PIDManager();
     
     void initialize(double tempKp, double tempKi, double tempKd,
                     double phKp, double phKi, double phKd,
                     double doKp, double doKi, double doKd);
 
-    void updateAll(double tempInput, double phInput, double doInput);
+    void updateAllPIDControllers();
 
     void setTemperatureSetpoint(double setpoint);
     void setPHSetpoint(double setpoint);
     void setDOSetpoint(double setpoint);
 
-    double getTemperatureOutput() const;
-    double getPHOutput() const;
-    double getDOOutput() const;
-
     void startTemperaturePID(double setpoint);
     void startPHPID(double setpoint);
     void startDOPID(double setpoint);
-    void updateTemperaturePID(double input);
-    void updatePHPID(double input);
-    void updateDOPID(double input);
+    void updateTemperaturePID();
+    void updatePHPID();
+    void updateDOPID();
     void stopTemperaturePID();
     void stopPHPID();
     void stopDOPID();
+    void stopAllPID();
     void pauseAllPID();
     void resumeAllPID();
 
-    void adjustStirringSpeed(int minSpeed);
+    double getTemperatureOutput() const;
+    double getPHOutput() const;
+    double getDOOutput() const;
+    void adjustPIDStirringSpeed();
 
     void saveParameters(const char* filename);
     void loadParameters(const char* filename);
 
-    static const unsigned long UPDATE_INTERVAL_TEMP = 1000; // 1 second for temperature
-    static const unsigned long UPDATE_INTERVAL_PH = 5000;   // 5 seconds for pH
-    static const unsigned long UPDATE_INTERVAL_DO = 10000;  // 10 seconds for dissolved oxygen
+    void setMinStirringSpeed(int speed) { minStirringSpeed = speed; }
+    int getMinStirringSpeed() const { return minStirringSpeed; }
 
-    void configure(const String& pidType, double setpoint);
-
+    void adjustPIDParameters(const String& pidType, double Kp, double Ki, double Kd);
+    //void saveParametersToEEPROM();
+    //void loadParametersFromEEPROM();
 private:
     PID tempPID;
     PID phPID;
@@ -60,9 +57,6 @@ private:
     double phInput, phOutput, phSetpoint;
     double doInput, doOutput, doSetpoint;
 
-    StirringMotor* stirringMotor;
-    HeatingPlate* heatingPlate;
-
     bool tempPIDRunning;
     bool phPIDRunning;
     bool doPIDRunning;
@@ -71,7 +65,11 @@ private:
     unsigned long lastPHUpdateTime;
     unsigned long lastDOUpdateTime;
 
-    void logPIDValues(const String& type, double setpoint, double input, double output);
+    static const unsigned long UPDATE_INTERVAL_TEMP = 10000; // 20 seconds - (10-20 seconds; usually in the chemical process industry ) ; could be appropriate if the changes are rapid: 1 second
+    static const unsigned long UPDATE_INTERVAL_PH = 30000;   // 45 seconds - (30-60 seconds; usually in the chemical process industry ) ; could be appropriate if the changes are rapid: 5 seconds
+    static const unsigned long UPDATE_INTERVAL_DO = 30000;  // 45 seconds - (30-60 seconds; usually in the chemical process industry ) ; could be appropriate if the changes are rapid: 10 seconds
+
+    int minStirringSpeed;
 };
 
 #endif // PID_MANAGER_H

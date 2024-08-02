@@ -1,16 +1,19 @@
+// PIDManager.cpp
 #include "PIDManager.h"
+#include "Logger.h"
 #include <Arduino.h>
-#include <EEPROM.h>
 
-PIDManager::PIDManager(StirringMotor* stirringMotor, HeatingPlate* heatingPlate)
+PIDManager::PIDManager()
     : tempPID(&tempInput, &tempOutput, &tempSetpoint, 0, 0, 0, DIRECT),
       phPID(&phInput, &phOutput, &phSetpoint, 0, 0, 0, DIRECT),
       doPID(&doInput, &doOutput, &doSetpoint, 0, 0, 0, DIRECT),
-      stirringMotor(stirringMotor),
-      heatingPlate(heatingPlate),
       tempPIDRunning(false), phPIDRunning(false), doPIDRunning(false),
-      lastTempUpdateTime(0), lastPHUpdateTime(0), lastDOUpdateTime(0)
+      lastTempUpdateTime(0), lastPHUpdateTime(0), lastDOUpdateTime(0),
+      minStirringSpeed(0)
 {
+    tempPID.SetOutputLimits(0, 100);
+    phPID.SetOutputLimits(0, 100);
+    doPID.SetOutputLimits(0, 100);
     tempPID.SetMode(AUTOMATIC);
     phPID.SetMode(AUTOMATIC);
     doPID.SetMode(AUTOMATIC);
@@ -24,134 +27,158 @@ void PIDManager::initialize(double tempKp, double tempKi, double tempKd,
     doPID.SetTunings(doKp, doKi, doKd);
 }
 
-void PIDManager::updateAll(double tempInput, double phInput, double doInput) {
-    this->tempInput = tempInput;
-    this->phInput = phInput;
-    this->doInput = doInput;
-    
-    if (tempPIDRunning) tempPID.Compute();
-    if (phPIDRunning) phPID.Compute();
-    if (doPIDRunning) doPID.Compute();
+void PIDManager::updateAllPIDControllers() {
+    unsigned long currentTime = millis();
+    bool pidUpdated = false;
+    if (tempPIDRunning && currentTime - lastTempUpdateTime >= UPDATE_INTERVAL_TEMP) {
+        updateTemperaturePID();
+        lastTempUpdateTime = currentTime;
+        pidUpdated = true;
+    }
+    if (phPIDRunning && currentTime - lastPHUpdateTime >= UPDATE_INTERVAL_PH) {
+        updatePHPID();
+        lastPHUpdateTime = currentTime;
+        pidUpdated = true;
+    }
+    if (doPIDRunning && currentTime - lastDOUpdateTime >= UPDATE_INTERVAL_DO) {
+        updateDOPID();
+        lastDOUpdateTime = currentTime;
+        pidUpdated = true;
+    }
+    if (pidUpdated) {
+        adjustPIDStirringSpeed();
+    }
 }
 
 void PIDManager::setTemperatureSetpoint(double setpoint) { tempSetpoint = setpoint; }
 void PIDManager::setPHSetpoint(double setpoint) { phSetpoint = setpoint; }
 void PIDManager::setDOSetpoint(double setpoint) { doSetpoint = setpoint; }
 
-double PIDManager::getTemperatureOutput() const { return tempOutput; }
-double PIDManager::getPHOutput() const { return phOutput; }
+double PIDManager::getTemperatureOutput() const { return tempOutput; } 
+double PIDManager::getPHOutput() const { return phOutput; }             
 double PIDManager::getDOOutput() const { return doOutput; }
 
 void PIDManager::startTemperaturePID(double setpoint) {
     tempSetpoint = setpoint;
     tempPIDRunning = true;
-    Serial.println("Temperature PID started with setpoint: " + String(setpoint));
+    Logger::log(LogLevel::INFO, "Temperature PID started with setpoint: " + String(setpoint));
 }
 
 void PIDManager::startPHPID(double setpoint) {
     phSetpoint = setpoint;
     phPIDRunning = true;
-    Serial.println("pH PID started with setpoint: " + String(setpoint));
+    Logger::log(LogLevel::INFO, "pH PID started with setpoint: " + String(setpoint));
 }
 
 void PIDManager::startDOPID(double setpoint) {
     doSetpoint = setpoint;
     doPIDRunning = true;
-    Serial.println("DO PID started with setpoint: " + String(setpoint));
+    Logger::log(LogLevel::INFO, "DO PID started with setpoint: " + String(setpoint));
 }
 
-void PIDManager::updateTemperaturePID(double input) {
+void PIDManager::adjustPIDStirringSpeed() {
+    if (!tempPIDRunning && !phPIDRunning && !doPIDRunning) return;
+
+    double maxOutput = max(max(abs(tempOutput), abs(phOutput)), abs(doOutput));
+    int pidSpeed = map(maxOutput, 0, 255, ActuatorController::getStirringMotorMinRPM(), ActuatorController::getStirringMotorMaxRPM());
+    int finalSpeed = max(pidSpeed, getMinStirringSpeed());
+    finalSpeed = constrain(finalSpeed, ActuatorController::getStirringMotorMinRPM(), ActuatorController::getStirringMotorMaxRPM());
+    ActuatorController::runActuator("stirringMotor", finalSpeed, 0);
+    
+    Logger::log(LogLevel::INFO, "Adjusted stirring motor speed: " + String(finalSpeed));
+}
+
+void PIDManager::updateTemperaturePID() {
     if (!tempPIDRunning) return;
-    unsigned long currentTime = millis();
-    if (currentTime - lastTempUpdateTime >= UPDATE_INTERVAL_TEMP) {
-        lastTempUpdateTime = currentTime;
-        tempInput = input;
-        tempPID.Compute();
-        heatingPlate->controlWithPID(tempOutput);
-        logPIDValues("Temperature", tempSetpoint, tempInput, tempOutput);
-    }
+    
+    tempInput = SensorController::readSensor("waterTempSensor");
+    tempPID.Compute();
+    int tempOutputPercentage = map(tempOutput, 0, 255, 0, 100);
+    ActuatorController::runActuator("heatingPlate", tempOutputPercentage , 0);
+    Logger::log(LogLevel::INFO, "Temperature PID update - Setpoint: " + String(tempSetpoint) + ", Input: " + String(tempInput) + ", Output: " + String(tempOutput));
+    Logger::logPIDData("Temperature", tempSetpoint, tempInput, tempOutput);
 }
 
-void PIDManager::updatePHPID(double input) {
+void PIDManager::updatePHPID() {
     if (!phPIDRunning) return;
-    unsigned long currentTime = millis();
-    if (currentTime - lastPHUpdateTime >= UPDATE_INTERVAL_PH) {
-        lastPHUpdateTime = currentTime;
-        phInput = input;
-        phPID.Compute();
-        logPIDValues("pH", phSetpoint, phInput, phOutput);
+    
+    phInput = SensorController::readSensor("phSensor");
+    phPID.Compute();
+    if (phOutput > 0) {
+        ActuatorController::runActuator("basePump", phOutput, 0);
+    } else {
+        ActuatorController::stopActuator("basePump");
     }
+    Logger::log(LogLevel::INFO, "pH PID update - Setpoint: " + String(phSetpoint) + ", Input: " + String(phInput) + ", Output: " + String(phOutput));
+    Logger::logPIDData("pH", phSetpoint, phInput, phOutput);
 }
 
-void PIDManager::updateDOPID(double input) {
+void PIDManager::updateDOPID() {
     if (!doPIDRunning) return;
-    unsigned long currentTime = millis();
-    if (currentTime - lastDOUpdateTime >= UPDATE_INTERVAL_DO) {
-        lastDOUpdateTime = currentTime;
-        doInput = input;
-        doPID.Compute();
-        logPIDValues("Dissolved Oxygen", doSetpoint, doInput, doOutput);
-    }
+
+    doInput = SensorController::readSensor("oxygenSensor");
+    doPID.Compute();
+    ActuatorController::runActuator("airPump", doOutput, 0);
+    Logger::log(LogLevel::INFO, "DO PID update - Setpoint: " + String(doSetpoint) + ", Input: " + String(doInput) + ", Output: " + String(doOutput));
+    Logger::logPIDData("Dissolved Oxygen", doSetpoint, doInput, doOutput);
 }
+
 
 void PIDManager::stopTemperaturePID() {
     tempPIDRunning = false;
     tempOutput = 0;
-    heatingPlate->control(false, 0);
-    Serial.println("Temperature PID stopped");
+    ActuatorController::stopActuator("heatingPlate");
+    Logger::log(LogLevel::INFO, "Temperature PID stopped");
 }
 
 void PIDManager::stopPHPID() {
     phPIDRunning = false;
     phOutput = 0;
-    Serial.println("pH PID stopped");
+    ActuatorController::stopActuator("basePump");
+    Logger::log(LogLevel::INFO, "pH PID stopped");
 }
 
 void PIDManager::stopDOPID() {
     doPIDRunning = false;
     doOutput = 0;
-    Serial.println("DO PID stopped");
+    ActuatorController::stopActuator("airPump");
+    Logger::log(LogLevel::INFO, "DO PID stopped");
 }
 
-void PIDManager::adjustStirringSpeed(int minSpeed) {
-    double maxOutput = max(max(abs(tempOutput), abs(phOutput)), abs(doOutput));
-    int pidSpeed = map(maxOutput, 0, 255, stirringMotor->getMinRPM(), stirringMotor->getMaxRPM());
-    int finalSpeed = max(pidSpeed, minSpeed);
-    stirringMotor->control(true, finalSpeed);
-}
-
-void PIDManager::logPIDValues(const String& type, double setpoint, double input, double output) {
-    Serial.print(type);
-    Serial.print(" - Setpoint: ");
-    Serial.print(setpoint);
-    Serial.print(", Input: ");
-    Serial.print(input);
-    Serial.print(", Output: ");
-    Serial.println(output);
-}
-
-void PIDManager::saveParameters(const char* filename) {
-    // Cette fonction devrait être implémentée pour sauvegarder les paramètres PID dans la mémoire EEPROM ou sur une carte SD
-    // Pour l'instant, nous allons simplement afficher un message
-    Serial.println("Saving PID parameters to " + String(filename));
-}
-
-void PIDManager::loadParameters(const char* filename) {
-    // Cette fonction devrait être implémentée pour charger les paramètres PID depuis la mémoire EEPROM ou une carte SD
-    // Pour l'instant, nous allons simplement afficher un message
-    Serial.println("Loading PID parameters from " + String(filename));
+void PIDManager::stopAllPID() {
+    stopTemperaturePID();
+    stopPHPID();
+    stopDOPID();
 }
 
 void PIDManager::pauseAllPID() {
-    // Arrêter tous les PID actifs
     tempPID.SetMode(MANUAL);
     phPID.SetMode(MANUAL);
     doPID.SetMode(MANUAL);
 }
 
 void PIDManager::resumeAllPID() {
-    // Reprendre tous les PID actifs
     tempPID.SetMode(AUTOMATIC);
     phPID.SetMode(AUTOMATIC);
     doPID.SetMode(AUTOMATIC);
+}
+
+void PIDManager::adjustPIDParameters(const String& pidType, double Kp, double Ki, double Kd) {
+    if (pidType == "temperature") {
+        tempPID.SetTunings(Kp, Ki, Kd);
+    } else if (pidType == "pH") {
+        phPID.SetTunings(Kp, Ki, Kd);
+    } else if (pidType == "DO") {
+        doPID.SetTunings(Kp, Ki, Kd);
+    }
+}
+
+// A sauvegarder/charger sur le serveur SI BESOIN de plus de data.
+void PIDManager::saveParameters(const char* filename) {
+    // Implement saving PID parameters to EEPROM or SD card
+    Logger::log(LogLevel::INFO, "Saving PID parameters to " + String(filename));
+}
+void PIDManager::loadParameters(const char* filename) {
+    // Implement loading PID parameters from EEPROM or SD card
+    Logger::log(LogLevel::INFO, "Loading PID parameters from " + String(filename));
 }
