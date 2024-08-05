@@ -8,9 +8,16 @@
 #include "StirringMotor.h"
 #include "HeatingPlate.h"
 #include "LEDGrowLight.h"
+#include "ActuatorController.h"
+
+enum class ControlMode {
+    PWM,
+    Relay
+};
 
 class ActuatorController {
 public:
+    public:
     static void initialize(DCPump& airPump, DCPump& drainPump,
                            PeristalticPump& nutrientPump, PeristalticPump& basePump,
                            StirringMotor& stirringMotor, HeatingPlate& heatingPlate,
@@ -38,6 +45,7 @@ public:
     static int getStirringMotorMaxRPM();
 
     static ActuatorInterface* findActuatorByName(const String& name);
+    static void runHeatingPlatePID(double pidOutput);
 
 private:
     static DCPump* airPump;
@@ -47,6 +55,7 @@ private:
     static StirringMotor* stirringMotor;
     static HeatingPlate* heatingPlate;
     static LEDGrowLight* ledGrowLight;
+    static ControlMode heatingControlMode;
 };
 
 #endif // ACTUATOR_CONTROLLER_H

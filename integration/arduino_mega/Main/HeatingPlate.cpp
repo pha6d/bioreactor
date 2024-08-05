@@ -6,24 +6,45 @@
 
 #include "HeatingPlate.h"
 #include "Logger.h"
+#include <Arduino.h>
 
-HeatingPlate::HeatingPlate(int relayPin, bool isPWMCapable, const char* name)
-    : _relayPin(relayPin), status(false), _isPWMCapable(isPWMCapable), _name(name) {
-    pinMode(_relayPin, OUTPUT);
-    digitalWrite(_relayPin, LOW);
+/*
+HeatingPlate::HeatingPlate(int controlPin, ActuatorController::ControlMode mode, const char* name)
+    : _controlPin(controlPin), _mode(mode), _name(name), status(false),
+      _cycleTime(DEFAULT_CYCLE_TIME), lastCycleStart(0), dutyCycle(0) {
+    pinMode(_controlPin, OUTPUT);
 }
 
 void HeatingPlate::begin() {
-    digitalWrite(_relayPin, LOW); // Ensure the heating plate is off at initialization
+    digitalWrite(_controlPin, LOW);
     Logger::log(LogLevel::INFO, String(_name) + " initialized");
 }
 
 void HeatingPlate::control(bool state, int value) {
-    if (_isPWMCapable) {
-        controlPWM(state ? map(value, 0, 100, 0, 255) : 0);
+    if (state) {
+        if (_mode == ActuatorController::ControlMode::Relay) {
+            controlWithCycle(value / 100.0);
+        } else {
+            controlPWM(value);
+        }
     } else {
-        controlOnOff(state);
+        digitalWrite(_controlPin, LOW);
     }
+    status = state;
+    Logger::log(LogLevel::INFO, String(_name) + " control called with state: " + String(state) + " and value: " + String(value));
+}
+
+void HeatingPlate::controlRelay(bool state) {
+    digitalWrite(_controlPin, state ? HIGH : LOW);
+    status = state;
+    Logger::log(LogLevel::INFO, String(_name) + (status ? " is ON" : " is OFF"));
+}
+
+void HeatingPlate::controlPWM(int value) {
+    int pwmValue = map(constrain(value, 0, MAX_POWER_PERCENT), 0, MAX_POWER_PERCENT, 0, 255);
+    analogWrite(_controlPin, pwmValue);
+    status = (pwmValue > 0);
+    Logger::log(LogLevel::INFO, String(_name) + (status ? " is ON with power: " + String(value) + "%" : " is OFF"));
 }
 
 bool HeatingPlate::isOn() const {
@@ -31,51 +52,84 @@ bool HeatingPlate::isOn() const {
 }
 
 void HeatingPlate::controlWithPID(double pidOutput) {
-    int percentPower = map(pidOutput, 0, 255, 0, 100);
-    
-    // Add a ramp to avoid abrupt changes
-    int powerDiff = percentPower - _lastPercentPower;
-    int maxChange = 5; // Limit change to 5% per cycle
-    percentPower = _lastPercentPower + constrain(powerDiff, -maxChange, maxChange);
-    
-    if (_isPWMCapable) {
-        controlPWM(map(percentPower, 0, 100, 0, 255));
+    int percentPower = map(pidOutput, 0, 100, 0, MAX_POWER_PERCENT);
+    if (_mode == HeatingControlMode::RELAY) {
+        controlWithCycle(percentPower / 100.0);
     } else {
-        controlWithCycle(percentPower);
+        controlPWM(percentPower);
     }
-    _lastPercentPower = percentPower;
+    Logger::log(LogLevel::INFO, String(_name) + " PID control with power: " + String(percentPower) + "%");
+}
+
+void HeatingPlate::controlWithCycle(double percentage) {
+    dutyCycle = percentage;
+    unsigned long now = millis();
+    if (now - lastCycleStart >= _cycleTime) {  
+        lastCycleStart = now;
+    }
+    digitalWrite(_controlPin, (now - lastCycleStart < _cycleTime * dutyCycle) ? HIGH : LOW);  
+    status = (dutyCycle > 0);
+}
+
+void HeatingPlate::setCycleTime(unsigned long newCycleTime) {
+    _cycleTime = newCycleTime;
+}
+*/
+
+#include "HeatingPlate.h"
+#include "Logger.h"
+
+HeatingPlate::HeatingPlate(int relayPin, bool isPWMCapable, const char* name)
+    : _relayPin(relayPin), _name(name), _status(false), _isPWMCapable(isPWMCapable) {
+    pinMode(_relayPin, OUTPUT);
+}
+
+void HeatingPlate::begin() {
+    digitalWrite(_relayPin, LOW);
+    Logger::log(LogLevel::INFO, String(_name) + " initialized");
+}
+
+void HeatingPlate::control(bool state, int value) {
+    if (state) {
+        if (_isPWMCapable) {
+            controlPWM(value);
+        } else {
+            controlWithCycle(value);
+        }
+    } else {
+        controlOnOff(false);
+    }
+}
+
+bool HeatingPlate::isOn() const {
+    return _status;
 }
 
 void HeatingPlate::controlPWM(int value) {
-    int percentage = map(value, 0, 255, 0, 100);
-    if (value > 0) {
-        analogWrite(_relayPin, value);
-        status = true;
-    } else {
-        analogWrite(_relayPin, 0);
-        status = false;
-    }
-    Logger::log(LogLevel::INFO, String(_name) + (status ? " is ON with power: " + String(percentage) + "%" : " is OFF"));
+    int pwmValue = map(value, 0, 100, 0, 255);
+    analogWrite(_relayPin, pwmValue);
+    _status = (pwmValue > 0);
+    Logger::log(LogLevel::INFO, String(_name) + (_status ? " is ON with power: " + String(value) + "%" : " is OFF"));
 }
 
 void HeatingPlate::controlOnOff(bool state) {
     digitalWrite(_relayPin, state ? HIGH : LOW);
-    status = state;
-    Logger::log(LogLevel::INFO, String(_name) + (status ? " is ON" : " is OFF"));
+    _status = state;
+    Logger::log(LogLevel::INFO, String(_name) + (_status ? " is ON" : " is OFF"));
 }
 
-void HeatingPlate::controlWithCycle(double percentPower) {
-    dutyCycle = percentPower / 100.0;
+void HeatingPlate::controlWithCycle(int percentage) {
+    _dutyCycle = percentage / 100.0;
     unsigned long now = millis();
-    if (now - lastCycleStart >= cycleTime) {
-        lastCycleStart = now;
+    if (now - _lastCycleStart >= _cycleTime) {
+        _lastCycleStart = now;
     }
-    if (now - lastCycleStart < cycleTime * dutyCycle) {
+    if (now - _lastCycleStart < _cycleTime * _dutyCycle) {
         digitalWrite(_relayPin, HIGH);
-        status = true;
+        _status = true;
     } else {
         digitalWrite(_relayPin, LOW);
-        status = false;
+        _status = false;
     }
-    Logger::log(LogLevel::INFO, String(_name) + " Duty Cycle: " + String(dutyCycle * 100) + "%");
+    Logger::log(LogLevel::INFO, String(_name) + " Duty Cycle: " + String(_dutyCycle * 100) + "%");
 }

@@ -10,17 +10,17 @@
 #include "ActuatorInterface.h"
 #include <Arduino.h>
 
-#define MAX_SAFE_TEMPERATURE 45.0
+
 
 class HeatingPlate : public ActuatorInterface {
 public:
     /*
      * Constructor for HeatingPlate.
-     * @param relayPin: The pin connected to the relay or PWM pin for the heating plate.
-     * @param isPWMCapable: Boolean indicating if the hardware supports PWM control.
+     * @param controlPin: The pin connected to the relay or PWM pin for the heating plate.
+     * 
      * @param name: Identifier for the heating plate (for debugging purposes).
      */
-    HeatingPlate(int relayPin, bool isPWMCapable, const char* name);
+     HeatingPlate(int relayPin, bool isPWMCapable, const char* name);
 
     /*
      * Method to initialize the heating plate.
@@ -47,27 +47,38 @@ public:
      */
     const char* getName() const override { return _name; }
 
-    /*
-     * Method to control the heating plate using PID output.
-     * @param pidOutput: The output from the PID controller (0-255).
-     */
-    void controlWithPID(double pidOutput);
-
 private:
-    int _relayPin;   // Relay or PWM pin
+/*
+    int _controlPin;   // Relay or PWM pin
     const char* _name;
     bool status;     // Track the state of the heating plate
-    bool _isPWMCapable; // Indicates if the hardware supports PWM
+    
 
+    const int MAX_POWER_PERCENT = 100;
     // For cycle control (non-PWM hardware)
-    unsigned long cycleTime = 10000; // 10 seconds per cycle = In process chemistry, it offers a good compromise between control accuracy and relay life. It is not necessary to increase it in most cases.
-    unsigned long lastCycleStart = 0;
-    double dutyCycle = 0; // 0 to 1
+    const unsigned long DEFAULT_CYCLE_TIME = 10000; // 10 seconds per cycle = In process chemistry, it offers a good compromise between control accuracy and relay life. It is not necessary to increase it in most cases.
+    unsigned long _cycleTime; 
+    unsigned long lastCycleStart;
+    double dutyCycle;
 
     void controlPWM(int value);
-    void controlOnOff(bool state);
+    void controlRelay(bool state);
     void controlWithCycle(double percentage);
-    int _lastPercentPower = 0;
+    //int _lastPercentPower = 0;
+    HeatingControlMode _mode;
+    */
+    int _relayPin;
+    const char* _name;
+    bool _status;
+    bool _isPWMCapable;
+    
+    unsigned long _cycleTime = 10000;
+    unsigned long _lastCycleStart = 0;
+    double _dutyCycle = 0;
+    
+    void controlPWM(int value);
+    void controlOnOff(bool state);
+    void controlWithCycle(int percentage);
 };
 
 #endif

@@ -44,12 +44,40 @@ void TestsProgram::update() {
     }
 }
 
+/*
 void TestsProgram::stop() {
     if (_isRunning) {
         if (_currentTestType == TestType::INDIVIDUAL_ACTUATOR) {
             ActuatorController::stopActuator(_actuatorName);
         } else {
             ActuatorController::stopAllActuators();
+        }
+        _isRunning = false;
+        _isPaused = false;
+        Logger::log(LogLevel::INFO, "Test finished: " + getTestTypeName(_currentTestType));
+    }
+}
+*/
+
+void TestsProgram::stop() {
+    if (_isRunning) {
+        switch (_currentTestType) {
+            case TestType::INDIVIDUAL_ACTUATOR:
+                ActuatorController::stopActuator(_actuatorName);
+                break;
+            case TestType::ALL_ACTUATORS:
+                ActuatorController::stopAllActuators();
+                break;
+            case TestType::PID_TEMPERATURE:
+            case TestType::PID_PH:
+            case TestType::PID_DISSOLVED_OXYGEN:
+                stopPIDTest();
+                break;
+            case TestType::SENSORS:
+                // Les tests de capteurs n'ont pas besoin d'être arrêtés explicitement
+                break;
+            default:
+                break;
         }
         _isRunning = false;
         _isPaused = false;
@@ -271,4 +299,22 @@ void TestsProgram::parseCommand(const String& command) {
     } else {
         Logger::log(LogLevel::ERROR, "Invalid test command");
     }
+}
+
+void TestsProgram::stopPIDTest() {
+    switch (_currentTestType) {
+        case TestType::PID_TEMPERATURE:
+            _pidManager.stopTemperaturePID();
+            break;
+        case TestType::PID_PH:
+            _pidManager.stopPHPID();
+            break;
+        case TestType::PID_DISSOLVED_OXYGEN:
+            _pidManager.stopDOPID();
+            break;
+        default:
+            break;
+    }
+    ActuatorController::stopActuator("stirringMotor");
+    Logger::log(LogLevel::INFO, "Stopped PID test: " + getTestTypeName(_currentTestType) + " and stirring motor");
 }

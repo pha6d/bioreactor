@@ -35,7 +35,7 @@ void StateMachine::update() {
         currentProgram->update();
         if (!currentProgram->isRunning()) {
             transitionToState(ProgramState::COMPLETED);
-            currentProgram = nullptr;  // Ajoutez cette ligne
+            currentProgram = nullptr; 
             Logger::log(LogLevel::INFO, "Program completed and cleared");
         }
     }
@@ -92,7 +92,7 @@ void StateMachine::stopAllPrograms() {
     if (currentProgram) {
         Logger::log(LogLevel::INFO, "Stopping current program: " + currentProgram->getName());
         currentProgram->stop();
-        currentProgram = nullptr;  // Ajoutez cette ligne
+        currentProgram = nullptr; 
         transitionToState(ProgramState::STOPPED);
         Logger::log(LogLevel::INFO, "All programs stopped");
         //Logger::log(LogLevel::INFO, "Current state: " + programStateToString(getCurrentState()));

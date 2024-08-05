@@ -22,6 +22,7 @@ public:
     void start(const String& command) override;
     void update() override;
     void stop() override;
+    void stopPIDTest();
     void pause() override;
     void resume() override;
     bool isRunning() const override { return _isRunning; }
@@ -37,6 +38,7 @@ private:
     unsigned long _testStartTime;
     int _currentActuatorTest;
     PIDManager& _pidManager;
+    
 
     void runTest();
     void runIndividualActuatorTest();

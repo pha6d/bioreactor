@@ -52,7 +52,7 @@ DCPump drainPump(3, 4, 15, "drainPump");
 PeristalticPump nutrientPump(0x61, 7, 1, 105.0, "nutrientPump");
 PeristalticPump basePump(0x60, 8, 1, 105.0, "basePump");
 StirringMotor stirringMotor(9, 10, 390, 1000,"stirringMotor"); // (390, 1500); 1000max sans déraillage
-HeatingPlate heatingPlate(13, false, "heatingPlate");
+HeatingPlate heatingPlate(12, false, "heatingPlate");
 LEDGrowLight ledGrowLight(27, "ledGrowLight");
 
 // System components
@@ -89,7 +89,6 @@ void setup() {
                                    stirringMotor, heatingPlate, ledGrowLight);
     ActuatorController::beginAll();
     
-    pidManager.initialize(2.0, 5.0, 1.0, 2.0, 5.0, 1.0, 2.0, 5.0, 1.0);
     safetySystem.setLogger(&logger); //This allows the SafetySystem to use the same logger
 
     // Add programs to the state machine
@@ -97,6 +96,11 @@ void setup() {
     stateMachine.addProgram("Drain", &drainProgram);
     stateMachine.addProgram("Mix", &mixProgram);
     stateMachine.addProgram("Fermentation", &fermentationProgram);
+
+    // Initialisation of the PIDManager to define hysteresis values
+    pidManager.initialize(2.0, 5.0, 1.0, 2.0, 5.0, 1.0, 2.0, 5.0, 1.0);
+    pidManager.setHysteresis(0.5, 0.05, 1.0);
+    Logger::log(LogLevel::INFO, "PID setup");
 
     Logger::log(LogLevel::INFO, "Setup completed");
 }
@@ -164,7 +168,7 @@ void loop() {
     stateMachine.update();
 
     // Update PID manager
-    //pidManager.updateAllPIDControllers();
+    pidManager.updateAllPIDControllers();
 
     // Check safety limits
     //safetySystem.checkLimits();

@@ -98,7 +98,7 @@ void FermentationProgram::stop() {
     _isPaused = false;
 
     ActuatorController::stopAllActuators();
-    pidManager.stopAllPID();
+    pidManager.stop();
 
     Logger::log(LogLevel::INFO, "Fermentation stopped");
 }
