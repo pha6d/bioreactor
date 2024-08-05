@@ -26,7 +26,10 @@ private:
     PIDManager& pidManager;
 
     void handleAdjustVolume(const String& command);
+
     void handleSetCommand(const String& command);
+    
+    void handlePHCalibrationCommand(const String& command);
 };
 
 #endif // COMMAND_HANDLER_H

@@ -26,54 +26,12 @@ For the Gravity: Analog pH Meter V2:
     - V+ to 5V on the Arduino.
     - GND to GND on the Arduino.
 2. Before taking measurements, calibrate the pH meter with standard buffer solutions.
+    https://www.youtube.com/watch?v=4pDPzQdSmqg
+
+ATTENTION :
+- After completing the measurement, disconnect the pH probe from the signal conversion board. The ph analog sensor probe should not be connected to the signal conversion board without the power supply for a long time
+- The bottle cap of the probe contains protective liquid (3.3mol/L KCL). Even if the bottle cap is screwed tightly, some protective liquid may still leak around the bottle cap, forming white crystals. But as long as there is still protective liquid in the bottle cap, it will not affect the life and accuracy of the probe. So please use it with confidence. It is recommended that the white crystals be poured back into the protective liquid in the bottle cap
 */
-
-#ifndef PHSENSOR_H
-#define PHSENSOR_H
-
-#include "SensorInterface.h"
-#include "DFRobot_PH.h"
-#include <EEPROM.h>
-#include <Arduino.h>
-
-class PHSensor : public SensorInterface {
-public:
-    /*
-     * Constructor for PHSensor.
-     * @param pin: The analog pin connected to the pH sensor.
-     */
-    PHSensor(int pin, const char* name);
-
-    /*
-     * Method to initialize the pH sensor.
-     */
-    void begin();
-
-    /*
-     * Method to read the pH value from the sensor.
-     * @return: The pH value.
-     */
-    float readValue();
-
-    /*
-     * Method to perform pH calibration.
-     * @param voltage: The voltage read from the pH sensor.
-     * @param temperature: The current temperature for compensation.
-     */
-    void calibrate(float voltage, float temperature);
-
-    const char* getName() const override { return _name; }
-
-private:
-    int _pin;          // Analog pin connected to the pH sensor
-    DFRobot_PH _ph;    // DFRobot_PH object for pH calculation
-    float _voltage;    // Voltage read from the pH sensor
-    float _temperature; // Current temperature for compensation
-    const char* _name;
-};
-
-#endif
-
 
 /*
 Installation Instructions:
@@ -94,3 +52,53 @@ For the Gravity: Analog pH Meter V2:
     -5. After completing the above steps, the two-point calibration is completed, and then the sensor can be used for actual measurement. The relevant parameters in the calibration process have been saved to the EEPROM of the main control board
 ATTENTION : After completing the measurement, disconnect the pH probe from the signal conversion board. The pH probe should not be connected to the signal conversion board without the power supply for a long time.
 */
+
+#ifndef PHSENSOR_H
+#define PHSENSOR_H
+
+#include "SensorInterface.h"
+#include "DFRobot_PH.h"
+#include <EEPROM.h>
+#include <Arduino.h>
+#include "PT100Sensor.h" // Include PT100Sensor for temperature compensation
+
+class PHSensor : public SensorInterface {
+public:
+    /*
+     * Constructor for PHSensor.
+     * @param pin: The analog pin connected to the pH sensor.
+     */
+    PHSensor(int pin, PT100Sensor* tempSensor, const char* name);
+
+    /*
+     * Method to initialize the pH sensor.
+     */
+    void begin();
+
+    /*
+     * Method to read the pH value from the sensor.
+     * @return: The pH value.
+     */
+    float readValue();
+
+    /*
+     * Method to perform pH calibration.
+     * @param voltage: The voltage read from the pH sensor.
+     * @param temperature: The current temperature for compensation.
+     */
+
+    const char* getName() const override { return _name; }
+
+    void calibration(const char* cmd);
+
+private:
+    int _pin;
+    const char* _name;
+    DFRobot_PH _ph;
+    float _voltage;
+    float _temperature;
+    PT100Sensor* _tempSensor; // Pointer to the PT100 temperature sensor
+};
+
+#endif
+

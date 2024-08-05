@@ -8,7 +8,8 @@
 #include "Logger.h"
 
 // Constructor for PHSensor
-PHSensor::PHSensor(int pin, const char* name) : _pin(pin), _name(name) {}
+PHSensor::PHSensor(int pin, PT100Sensor* tempSensor, const char* name) 
+    : _pin(pin), _tempSensor(tempSensor), _name(name), _voltage(0) {}
 
 // Method to initialize the pH sensor
 void PHSensor::begin() {
@@ -19,10 +20,12 @@ void PHSensor::begin() {
 // Method to read the pH value from the sensor
 float PHSensor::readValue() {
     _voltage = analogRead(_pin) / 1024.0 * 5000; // Convert analog reading to millivolts
+    float temperature = _tempSensor->readValue();
     return _ph.readPH(_voltage, _temperature); // Calculate pH value with temperature compensation
 }
 
-// Method to perform pH calibration
-void PHSensor::calibrate(float voltage, float temperature) {
-    _ph.calibration(voltage, temperature); // Perform calibration using the DFRobot_PH library
+// Method to handle pH calibration commands
+void PHSensor::calibration(const char* cmd) {
+    float temperature = _tempSensor->readValue();
+    _ph.calibration(_voltage, _temperature, const_cast<char*>(cmd)); // Call the calibration method from DFRobot_PH class
 }

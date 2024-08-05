@@ -41,7 +41,7 @@
 // Sensor declarations
 PT100Sensor waterTempSensor(22, 23, 24, 25, "waterTempSensor");
 DS18B20TemperatureSensor airTempSensor(52, "airTempSensor");
-PHSensor phSensor(A1, "phSensor");
+PHSensor phSensor(A1, &waterTempSensor, "phSensor");
 TurbiditySensor turbiditySensor(A2, "turbiditySensor");
 OxygenSensor oxygenSensor(A3, &waterTempSensor, "oxygenSensor");
 AirFlowSensor airFlowSensor(26, "airFlowSensor");

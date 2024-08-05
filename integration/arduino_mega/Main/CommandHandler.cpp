@@ -1,8 +1,6 @@
 // CommandHandler.cpp
 #include "CommandHandler.h"
 
-#include "CommandHandler.h"
-
 CommandHandler::CommandHandler(StateMachine& stateMachine, SafetySystem& safetySystem, 
                                VolumeManager& volumeManager, Logger& logger,
                                PIDManager& pidManager)
@@ -30,6 +28,8 @@ void CommandHandler::executeCommand(const String& command) {
         handleAdjustVolume(command);
     } else if (command.startsWith("set_") || command.startsWith("alarms ") || command.startsWith("warnings ")) {
         handleSetCommand(command);
+    } else if (command.startsWith("ph ")) {
+        handlePHCalibrationCommand(command);
     } else {
         logger.log(LogLevel::WARNING, "Unknown command: " + command);
     }
@@ -69,7 +69,21 @@ void CommandHandler::handleSetCommand(const String& command) {
     }
 }
 
-
+void CommandHandler::handlePHCalibrationCommand(const String& command) {
+    String cmd = command.substring(3);
+    cmd.trim();
+    if (cmd == "ENTERPH" || cmd == "CALPH" || cmd == "EXITPH") {
+        PHSensor* phSensor = (PHSensor*)SensorController::findSensorByName("phSensor");
+        if (phSensor) {
+            phSensor->calibration(cmd.c_str());
+            logger.log(LogLevel::INFO, "pH calibration command: " + cmd);
+        } else {
+            logger.log(LogLevel::WARNING, "pH sensor not found");
+        }
+    } else {
+        logger.log(LogLevel::WARNING, "Invalid pH calibration command: " + cmd);
+    }
+}
 
 void CommandHandler::printHelp() {
     Serial.println();
@@ -106,6 +120,9 @@ void CommandHandler::printHelp() {
     Serial.println("warning true - Enable safety warnings");
     Serial.println("set_check_interval <seconds> - Set safety check interval");
     Serial.println("set_initial_volume <volume> - Set the initial culture volume (in liters)");
+    Serial.println("ph ENTERPH - Enter pH calibration mode");
+    Serial.println("ph CALPH - Calibrate with buffer solution");
+    Serial.println("ph EXITPH - Save and exit pH calibration mode");
     Serial.println("-----------------------------------------------------------------------------------------------------------------------");
 }
 

@@ -18,6 +18,8 @@ public:
     static float readSensor(const String& sensorName);
     static void updateAllSensors();
     static void beginAll();
+    
+    static SensorInterface* findSensorByName(const String& name);
 
 private:
     static PT100Sensor* waterTempSensor;
@@ -27,7 +29,7 @@ private:
     static OxygenSensor* oxygenSensor;
     static AirFlowSensor* airFlowSensor;
 
-    static SensorInterface* findSensorByName(const String& name);
+    
 };
 
 #endif // SENSOR_CONTROLLER_H
