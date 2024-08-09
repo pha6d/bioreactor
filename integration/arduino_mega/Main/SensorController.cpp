@@ -8,11 +8,13 @@ PHSensor* SensorController::phSensor = nullptr;
 TurbiditySensor* SensorController::turbiditySensor = nullptr;
 OxygenSensor* SensorController::oxygenSensor = nullptr;
 AirFlowSensor* SensorController::airFlowSensor = nullptr;
+TurbiditySensorSEN0554* SensorController::turbiditySensorSEN0554 = nullptr;
 
 // Initialize method
 void SensorController::initialize(PT100Sensor& waterTemp, DS18B20TemperatureSensor& airTemp,
                                   PHSensor& ph, TurbiditySensor& turbidity,
-                                  OxygenSensor& oxygen, AirFlowSensor& airFlow) {
+                                  OxygenSensor& oxygen, AirFlowSensor& airFlow,
+                                  TurbiditySensorSEN0554& turbiditySEN0554) {
     // Assign addresses of sensor objects to the static pointers
     waterTempSensor = &waterTemp;
     airTempSensor = &airTemp;
@@ -20,6 +22,7 @@ void SensorController::initialize(PT100Sensor& waterTemp, DS18B20TemperatureSens
     turbiditySensor = &turbidity;
     oxygenSensor = &oxygen;
     airFlowSensor = &airFlow;
+    turbiditySensorSEN0554 = &turbiditySEN0554;
 }
 
 void SensorController::beginAll() {
@@ -29,6 +32,7 @@ void SensorController::beginAll() {
     turbiditySensor->begin();
     oxygenSensor->begin();
     airFlowSensor->begin();
+    turbiditySensorSEN0554->begin();
 }
 
 float SensorController::readSensor(const String& sensorName) {
@@ -49,6 +53,7 @@ void SensorController::updateAllSensors() {
     readSensor(turbiditySensor->getName());
     readSensor(oxygenSensor->getName());
     readSensor(airFlowSensor->getName());
+    readSensor(turbiditySensorSEN0554->getName());
 }
 
 SensorInterface* SensorController::findSensorByName(const String& name) {
@@ -58,5 +63,6 @@ SensorInterface* SensorController::findSensorByName(const String& name) {
     if (name == turbiditySensor->getName()) return turbiditySensor;
     if (name == oxygenSensor->getName()) return oxygenSensor;
     if (name == airFlowSensor->getName()) return airFlowSensor;
+    if (name == turbiditySensorSEN0554->getName()) return turbiditySensorSEN0554;
     return nullptr;
 }

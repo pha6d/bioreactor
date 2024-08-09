@@ -10,12 +10,13 @@ PeristalticPump* ActuatorController::basePump = nullptr;
 StirringMotor* ActuatorController::stirringMotor = nullptr;
 HeatingPlate* ActuatorController::heatingPlate = nullptr;
 LEDGrowLight* ActuatorController::ledGrowLight = nullptr;
+DCPump* ActuatorController::samplePump = nullptr;
 
 // Initialize method
 void ActuatorController::initialize(DCPump& airP, DCPump& drainP,
                                     PeristalticPump& nutrientP, PeristalticPump& baseP,
                                     StirringMotor& stirringM, HeatingPlate& heatingP,
-                                    LEDGrowLight& ledLight) {
+                                    LEDGrowLight& ledLight, DCPump& sampleP) {
     // Assign addresses of actuators objects to the static pointers
     airPump = &airP;
     drainPump = &drainP;
@@ -24,11 +25,13 @@ void ActuatorController::initialize(DCPump& airP, DCPump& drainP,
     stirringMotor = &stirringM;
     heatingPlate = &heatingP;
     ledGrowLight = &ledLight;
+    samplePump = &sampleP;
 }
 
 void ActuatorController::beginAll() {
     airPump->begin();
     drainPump->begin();
+    samplePump->begin();
     nutrientPump->begin();
     basePump->begin();
     stirringMotor->begin();
@@ -86,7 +89,7 @@ bool ActuatorController::isActuatorRunning(const String& actuatorName) {
 ActuatorInterface* ActuatorController::findActuatorByName(const String& name) {
     static const ActuatorInterface* actuators[] = {
         airPump, drainPump, nutrientPump, basePump, 
-        stirringMotor, heatingPlate, ledGrowLight
+        stirringMotor, heatingPlate, ledGrowLight, samplePump
     };
     
     for (const auto& actuator : actuators) {

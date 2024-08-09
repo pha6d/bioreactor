@@ -45,10 +45,12 @@ PHSensor phSensor(A1, &waterTempSensor, "phSensor");
 TurbiditySensor turbiditySensor(A2, "turbiditySensor");
 OxygenSensor oxygenSensor(A3, &waterTempSensor, "oxygenSensor");
 AirFlowSensor airFlowSensor(26, "airFlowSensor");
+TurbiditySensorSEN0554 turbiditySensorSEN0554(28, 29, "turbiditySensorSEN0554");
 
 // Actuator declarations
 DCPump airPump(5, 6, 10, "airPump");
 DCPump drainPump(3, 4, 15, "drainPump");
+DCPump samplePump(11, 29, 15, "samplePump");
 PeristalticPump nutrientPump(0x61, 7, 1, 105.0, "nutrientPump");
 PeristalticPump basePump(0x60, 8, 1, 105.0, "basePump");
 StirringMotor stirringMotor(9, 10, 390, 1000,"stirringMotor"); // (390, 1500); 1000max sans déraillage
@@ -81,12 +83,12 @@ void setup() {
 
     // Initialize sensors
     SensorController::initialize(waterTempSensor, airTempSensor, phSensor,
-                                 turbiditySensor, oxygenSensor, airFlowSensor);
+                                 turbiditySensor, oxygenSensor, airFlowSensor, turbiditySensorSEN0554);
     SensorController::beginAll();
 
     // Initialize actuators
     ActuatorController::initialize(airPump, drainPump, nutrientPump, basePump,
-                                   stirringMotor, heatingPlate, ledGrowLight);
+                                   stirringMotor, heatingPlate, ledGrowLight, samplePump);
     ActuatorController::beginAll();
     
     safetySystem.setLogger(&logger); //This allows the SafetySystem to use the same logger

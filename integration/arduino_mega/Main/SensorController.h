@@ -8,12 +8,13 @@
 #include "TurbiditySensor.h"
 #include "OxygenSensor.h"
 #include "AirFlowSensor.h"
+#include "TurbiditySensorSEN0554.h"
 
 class SensorController {
 public:
     static void initialize(PT100Sensor& waterTemp, DS18B20TemperatureSensor& airTemp,
                            PHSensor& ph, TurbiditySensor& turbidity,
-                           OxygenSensor& oxygen, AirFlowSensor& airFlow);
+                           OxygenSensor& oxygen, AirFlowSensor& airFlow, TurbiditySensorSEN0554& turbiditySEN0554);
     
     static float readSensor(const String& sensorName);
     static void updateAllSensors();
@@ -28,6 +29,7 @@ private:
     static TurbiditySensor* turbiditySensor;
     static OxygenSensor* oxygenSensor;
     static AirFlowSensor* airFlowSensor;
+    static TurbiditySensorSEN0554* turbiditySensorSEN0554;
 
     
 };
