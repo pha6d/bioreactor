@@ -29,6 +29,7 @@
 #include "Logger.h"
 #include "PIDManager.h"
 #include "CommandHandler.h"
+#include "Communication.h"
 
 #include "TestsProgram.h"
 #include "DrainProgram.h"
@@ -38,24 +39,26 @@
 // Define serial port for communication with ESP32
 #define SerialESP Serial1
 
+Communication espCommunication(SerialESP);
+
 // Sensor declarations
-PT100Sensor waterTempSensor(22, 23, 24, 25, "waterTempSensor");
-DS18B20TemperatureSensor airTempSensor(52, "airTempSensor");
-PHSensor phSensor(A1, &waterTempSensor, "phSensor");
-TurbiditySensor turbiditySensor(A2, "turbiditySensor");
-OxygenSensor oxygenSensor(A3, &waterTempSensor, "oxygenSensor");
-AirFlowSensor airFlowSensor(26, "airFlowSensor");
-TurbiditySensorSEN0554 turbiditySensorSEN0554(28, 29, "turbiditySensorSEN0554");
+PT100Sensor waterTempSensor(22, 23, 24, 25, "waterTempSensor");  // Water temperature sensor (CS: 22, DI: 23, DO: 24, CLK: 25)
+DS18B20TemperatureSensor airTempSensor(52, "airTempSensor");     // Air temperature sensor (Data: 52)
+PHSensor phSensor(A1, &waterTempSensor, "phSensor");             // pH sensor (Analog: A1, uses water temp for compensation)
+TurbiditySensor turbiditySensor(A2, "turbiditySensor");          // Turbidity sensor (Analog: A2)
+OxygenSensor oxygenSensor(A3, &waterTempSensor, "oxygenSensor"); // Dissolved oxygen sensor (Analog: A3, uses water temp)
+AirFlowSensor airFlowSensor(26, "airFlowSensor");                // Air flow sensor (Digital: 26)
+TurbiditySensorSEN0554 turbiditySensorSEN0554(28, 29, "turbiditySensorSEN0554"); // SEN0554 turbidity sensor (RX: 28, TX: 29)
 
 // Actuator declarations
-DCPump airPump(5, 6, 10, "airPump");
-DCPump drainPump(3, 4, 15, "drainPump");
-DCPump samplePump(11, 29, 15, "samplePump");
-PeristalticPump nutrientPump(0x61, 7, 1, 105.0, "nutrientPump");
-PeristalticPump basePump(0x60, 8, 1, 105.0, "basePump");
-StirringMotor stirringMotor(9, 10, 390, 1000,"stirringMotor"); // (390, 1500); 1000max sans déraillage
-HeatingPlate heatingPlate(12, false, "heatingPlate");
-LEDGrowLight ledGrowLight(27, "ledGrowLight");
+DCPump airPump(5, 6, 10, "airPump");        // Air pump (PWM: 5, Relay: 6, Min PWM: 10)
+DCPump drainPump(3, 4, 15, "drainPump");    // Drain pump (PWM: 3, Relay: 4, Min PWM: 15)
+DCPump samplePump(11, 29, 15, "samplePump");// Sample pump (PWM: 11, Relay: 29, Min PWM: 15)
+PeristalticPump nutrientPump(0x61, 7, 1, 105.0, "nutrientPump"); // Nutrient pump (I2C: 0x61, Relay: 7, Min flow: 1, Max flow: 105.0)
+PeristalticPump basePump(0x60, 8, 1, 105.0, "basePump");         // Base pump (I2C: 0x60, Relay: 8, Min flow: 1, Max flow: 105.0)
+StirringMotor stirringMotor(9, 10, 390, 1000,"stirringMotor");   // Stirring motor (PWM: 9, Relay: 10, Min RPM: 390, Max RPM: 1000)
+HeatingPlate heatingPlate(12, false, "heatingPlate");            // Heating plate (Relay: 12, Not PWM capable)
+LEDGrowLight ledGrowLight(27, "ledGrowLight");                   // LED grow light (Relay: 27)
 
 // System components
 Logger logger;
@@ -77,7 +80,7 @@ const long interval = 30000; // Interval for logging (30 seconds)
 
 void setup() {
     Serial.begin(115200);  // Initialize serial communication for debugging
-    SerialESP.begin(9600); // Initialize serial communication with ESP32
+    espCommunication.begin(9600); // Initialize serial communication with ESP32
 
     Logger::log(LogLevel::INFO, "Setup started");
 
@@ -109,50 +112,11 @@ void setup() {
 
 void loop() {
     // Check for incoming commands from ESP32
-    if (SerialESP.available() > 0) {
-        String receivedData = SerialESP.readStringUntil('\n');
-        receivedData.trim();
-
-        Logger::log(LogLevel::INFO, "Received from ESP32: " + receivedData);
-
-        // Check if it's a valid JSON
-        StaticJsonDocument<200> doc;
-        DeserializationError error = deserializeJson(doc, receivedData);
-
-        if (error) {
-            // If it's not a valid JSON, treat as a direct command
-            commandHandler.executeCommand(receivedData);
-        } else {
-            // It's a valid JSON, extract information and create the command
-            String program = doc["program"];
-            
-            if (program == "mix") {
-                int speed = doc["speed"];
-                String command = "mix " + String(speed);
-                commandHandler.executeCommand(command);
-            } else if (program == "drain") {
-                int rate = doc["rate"];
-                int duration = doc["duration"];
-                String command = "drain " + String(rate) + " " + String(duration);
-                commandHandler.executeCommand(command);
-            } else if (program == "fermentation") {
-                float tempSetpoint = doc["temperature"];
-                float phSetpoint = doc["pH"];
-                float doSetpoint = doc["dissolvedOxygen"];
-                float nutrientConc = doc["nutrientConcentration"];
-                float baseConc = doc["baseConcentration"];
-                int duration = doc["duration"];
-                String experimentName = doc["experimentName"];
-                String comment = doc["comment"];
-                String command = "fermentation " + String(tempSetpoint) + " " + String(phSetpoint) + " " +
-                                 String(doSetpoint) + " " + String(nutrientConc) + " " + String(baseConc) + " " +
-                                 String(duration) + " " + experimentName + " " + comment;
-                commandHandler.executeCommand(command);
-            } else if (program == "stop") {
-                commandHandler.executeCommand("stop");
-            } else {
-                Logger::log(LogLevel::WARNING, "Unknown program: " + program);
-            }
+    if (espCommunication.available()) {
+        String receivedData = espCommunication.readMessage();
+        if (receivedData.length() > 0) {
+            Logger::log(LogLevel::INFO, "Received from ESP32: " + receivedData);
+            espCommunication.processCommand(receivedData);
         }
     }
 
@@ -160,9 +124,7 @@ void loop() {
     if (Serial.available() > 0) {
         String command = Serial.readStringUntil('\n');
         command.trim();
-
         Logger::log(LogLevel::INFO, "Received from Serial Monitor: " + command);
-
         commandHandler.executeCommand(command);
     }
     
@@ -179,7 +141,6 @@ void loop() {
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
-
         logger.logData(stateMachine.getCurrentProgram(), String(static_cast<int>(stateMachine.getCurrentState())));
     }
 
