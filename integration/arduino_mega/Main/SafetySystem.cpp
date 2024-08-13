@@ -16,6 +16,7 @@ void SafetySystem::checkLimits() {
     stopRequired = false;
     checkWaterTemperature();
     checkAirTemperature();
+    checkElectronicTemperature();
     checkPH();
     checkDissolvedOxygen();
     checkVolume();
@@ -23,7 +24,7 @@ void SafetySystem::checkLimits() {
 }
 
 void SafetySystem::checkWaterTemperature() {
-    float temp = SensorController::readSensor("WaterTemp");
+    float temp = SensorController::readSensor("waterTempSensor");
     if (temp < MIN_WATER_TEMP) logAlert("Water temperature low", LogLevel::WARNING);
     if (temp > MAX_WATER_TEMP) logAlert("Water temperature high", LogLevel::WARNING);
     if (temp > CRITICAL_WATER_TEMP) {
@@ -33,13 +34,13 @@ void SafetySystem::checkWaterTemperature() {
 }
 
 void SafetySystem::checkAirTemperature() {
-    float temp = SensorController::readSensor("AirTemp");
+    float temp = SensorController::readSensor("airTempSensor");
     if (temp < MIN_AIR_TEMP) logAlert("Air temperature low", LogLevel::WARNING);
     if (temp > MAX_AIR_TEMP) logAlert("Air temperature high", LogLevel::WARNING);
 }
 
 void SafetySystem::checkPH() {
-    float pH = SensorController::readSensor("pH");
+    float pH = SensorController::readSensor("phSensor");
     if (pH < MIN_PH) logAlert("pH low", LogLevel::WARNING);
     if (pH > MAX_PH) logAlert("pH high", LogLevel::WARNING);
     if (pH > CRITICAL_PH) {
@@ -49,7 +50,7 @@ void SafetySystem::checkPH() {
 }
 
 void SafetySystem::checkDissolvedOxygen() {
-    float do_percent = SensorController::readSensor("Oxygen");
+    float do_percent = SensorController::readSensor("oxygenSensor");
     if (do_percent < MIN_DO) logAlert("Dissolved oxygen low", LogLevel::WARNING);
 }
 
@@ -66,9 +67,19 @@ void SafetySystem::checkVolume() {
 }
 
 void SafetySystem::checkTurbidity() {
-    float turbidity = SensorController::readSensor("Turbidity");
+    float turbidity = SensorController::readSensor("turbiditySensorSEN0554");
     if (turbidity > MAX_TURBIDITY) {
         logAlert("Turbidity high", LogLevel::WARNING);
+    }
+}
+
+void SafetySystem::checkElectronicTemperature() {
+    float temp = SensorController::readSensor("electronicTempSensor");
+    if (temp > MAX_ELECTRONIC_TEMP) {
+        logAlert("Electronic temperature critical", LogLevel::ERROR);
+        stopRequired = true;
+    } else if (temp > MAX_ELECTRONIC_TEMP - 10) {  // Warning at 5°C below the limit
+        logAlert("Electronic temperature high", LogLevel::WARNING);
     }
 }
 

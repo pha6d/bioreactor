@@ -12,7 +12,7 @@ const float SCALE_FACTOR = 1.5;  // Facteur d'échelle
 const int OFFSET = 10;           // Décalage
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   sensorSerial.begin(9600);
   Serial.println("Capteur de turbidité SEN0554 - Test avec ajustement");
 }

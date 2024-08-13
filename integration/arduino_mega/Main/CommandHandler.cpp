@@ -100,6 +100,7 @@ void CommandHandler::printHelp() {
     Serial.println("_ml_per_min> <duration_seconds>");
     Serial.println("    airPump <speed_0_100%> <duration_seconds>");
     Serial.println("    drainPump <speed_0_100%> <duration_seconds>");
+    Serial.println("    samplePump <speed_0_100%> <duration_seconds>");
     Serial.print("    stirringMotor <speed_");
     Serial.print(ActuatorController::getStirringMotorMinRPM());
     Serial.print("_");

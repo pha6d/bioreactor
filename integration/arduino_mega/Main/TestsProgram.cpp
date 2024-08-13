@@ -44,21 +44,6 @@ void TestsProgram::update() {
     }
 }
 
-/*
-void TestsProgram::stop() {
-    if (_isRunning) {
-        if (_currentTestType == TestType::INDIVIDUAL_ACTUATOR) {
-            ActuatorController::stopActuator(_actuatorName);
-        } else {
-            ActuatorController::stopAllActuators();
-        }
-        _isRunning = false;
-        _isPaused = false;
-        Logger::log(LogLevel::INFO, "Test finished: " + getTestTypeName(_currentTestType));
-    }
-}
-*/
-
 void TestsProgram::stop() {
     if (_isRunning) {
         switch (_currentTestType) {
@@ -74,7 +59,7 @@ void TestsProgram::stop() {
                 stopPIDTest();
                 break;
             case TestType::SENSORS:
-                // Les tests de capteurs n'ont pas besoin d'être arrêtés explicitement
+                // Sensor tests do not need to be stopped explicitly
                 break;
             default:
                 break;
@@ -95,7 +80,7 @@ void TestsProgram::pause() {
 
 void TestsProgram::resume() {
     if (_isRunning && _isPaused) {
-        // mettre le derniere acutateur lancé dans une variable & dernier program lancé + lancer le dernier actuateur
+        // mettre le derniere acutateur lancé dans une variable & dernier program lancé + lancer le dernier actuateur... //A FAIRE
         // ...
         _isPaused = false;
         Logger::log(LogLevel::INFO, "Test resumed: " + getTestTypeName(_currentTestType));
@@ -159,6 +144,15 @@ void TestsProgram::updateAllActuatorsTest() {
             }
             break;
         case 2:
+            if (elapsedTime < 10000) {
+                ActuatorController::runActuator("samplePump", 80, 0);
+            } else {
+                ActuatorController::stopActuator("samplePump");
+                _currentActuatorTest++;
+                Logger::log(LogLevel::INFO, "Sample Pump test completed");
+            }
+            break;
+        case 3:
             if (elapsedTime < 15000) {
                 ActuatorController::runActuator("stirringMotor", 1500, 0);
             } else {
@@ -167,7 +161,7 @@ void TestsProgram::updateAllActuatorsTest() {
                 Logger::log(LogLevel::INFO, "Stirring Motor test completed");
             }
             break;
-        case 3:
+        case 4:
             if (elapsedTime < 20000) {
                 ActuatorController::runActuator("nutrientPump", 50, 0);
             } else {
@@ -176,7 +170,7 @@ void TestsProgram::updateAllActuatorsTest() {
                 Logger::log(LogLevel::INFO, "Nutrient Pump test completed");
             }
             break;
-        case 4:
+        case 5:
             if (elapsedTime < 25000) {
                 ActuatorController::runActuator("basePump", 30, 0);
             } else {
@@ -185,7 +179,7 @@ void TestsProgram::updateAllActuatorsTest() {
                 Logger::log(LogLevel::INFO, "Base Pump test completed");
             }
             break;
-        case 5:
+        case 6:
             if (elapsedTime < 30000) {
                 ActuatorController::runActuator("heatingPlate", 100, 0);
             } else {
@@ -194,7 +188,7 @@ void TestsProgram::updateAllActuatorsTest() {
                 Logger::log(LogLevel::INFO, "Heating Plate test completed");
             }
             break;
-        case 6:
+        case 7:
             if (elapsedTime < 35000) {
                 ActuatorController::runActuator("ledGrowLight", 100, 0);
             } else {

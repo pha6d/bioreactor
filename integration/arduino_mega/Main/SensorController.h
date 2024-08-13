@@ -5,16 +5,17 @@
 #include "PT100Sensor.h"
 #include "DS18B20TemperatureSensor.h"
 #include "PHSensor.h"
-#include "TurbiditySensor.h"
 #include "OxygenSensor.h"
 #include "AirFlowSensor.h"
 #include "TurbiditySensorSEN0554.h"
 
 class SensorController {
 public:
-    static void initialize(PT100Sensor& waterTemp, DS18B20TemperatureSensor& airTemp,
-                           PHSensor& ph, TurbiditySensor& turbidity,
-                           OxygenSensor& oxygen, AirFlowSensor& airFlow, TurbiditySensorSEN0554& turbiditySEN0554);
+    static void initialize(PT100Sensor& waterTemp, DS18B20TemperatureSensor& airTemp, DS18B20TemperatureSensor& electronicTempSensor,
+                           PHSensor& ph,
+                           OxygenSensor& oxygen, 
+                           AirFlowSensor& airFlow, 
+                           TurbiditySensorSEN0554& turbiditySEN0554);
     
     static float readSensor(const String& sensorName);
     static void updateAllSensors();
@@ -25,8 +26,8 @@ public:
 private:
     static PT100Sensor* waterTempSensor;
     static DS18B20TemperatureSensor* airTempSensor;
+    static DS18B20TemperatureSensor* electronicTempSensor;
     static PHSensor* phSensor;
-    static TurbiditySensor* turbiditySensor;
     static OxygenSensor* oxygenSensor;
     static AirFlowSensor* airFlowSensor;
     static TurbiditySensorSEN0554* turbiditySensorSEN0554;

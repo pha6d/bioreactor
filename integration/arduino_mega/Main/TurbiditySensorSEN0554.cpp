@@ -9,40 +9,40 @@
 #include "TurbiditySensorSEN0554.h"
 #include "Logger.h"
 
-TurbiditySensorSEN0554::TurbiditySensorSEN0554(int rxPin, int txPin, const char* name) 
+TurbiditySensorSEN0554::TurbiditySensorSEN0554(int rxPin, int txPin, const char* name)
     : _serial(rxPin, txPin), _name(name) {}
 
 void TurbiditySensorSEN0554::begin() {
-    _serial.begin(9600);  // Baud rate is 9600 as per sensor specifications
+    _serial.begin(9600);
     Logger::log(LogLevel::INFO, String(_name) + " initialized");
 }
 
 float TurbiditySensorSEN0554::readValue() {
     if (communicate()) {
-        return static_cast<float>(_response[3]);
+        int rawTurbidity = _response[3];
+        float adjustedTurbidity = (rawTurbidity * SCALE_FACTOR) + OFFSET;
+        //Logger::log(LogLevel::INFO, String(_name) + " - raw value: " + String(rawTurbidity) + 
+        //            ", Adjusted value: " + String(adjustedTurbidity));
+        return adjustedTurbidity;
     }
-    return -1.0f; // Return an error value if communication fails
+    Logger::log(LogLevel::WARNING, String(_name) + " - No sensor response");
+    return -1.0f;
 }
 
 bool TurbiditySensorSEN0554::communicate() {
     _serial.write(_command, 5);
-    
-    unsigned long startTime = millis();
-    while (!_serial.available()) {
-        if (millis() - startTime > 1000) {
-            Logger::log(LogLevel::ERROR, String(_name) + " communication timeout");
-            return false;
-        }
-    }
+    delay(100);  // Délai ajouté comme dans le code fonctionnel
 
     if (_serial.available() >= 5) {
         for (int i = 0; i < 5; i++) {
             _response[i] = _serial.read();
         }
-        _serial.flush();
-        return true;
+        
+        if (_response[0] == 0x18 && _response[1] == 0x05) {
+            return true;
+        } else {
+            Logger::log(LogLevel::ERROR, String(_name) + " - Réponse invalide du capteur");
+        }
     }
-
-    Logger::log(LogLevel::ERROR, String(_name) + " incomplete response");
     return false;
 }

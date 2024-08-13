@@ -29,7 +29,7 @@
 
 class TurbiditySensorSEN0554 : public SensorInterface {
 public:
-    TurbiditySensorSEN0554(int rxPin, int txPin, const char* name);
+    TurbiditySensorSEN0554(int rxPin, int txPin, const char* name);  // Blue, green
     void begin() override;
     float readValue() override;
     const char* getName() const override { return _name; }
@@ -39,6 +39,8 @@ private:
     const char* _name;
     unsigned char _command[5] = {0x18, 0x05, 0x00, 0x01, 0x0D};
     unsigned char _response[5];
+    const float SCALE_FACTOR = 1.5;
+    const int OFFSET = 10;
     bool communicate();
 };
 

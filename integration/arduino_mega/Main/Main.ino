@@ -44,16 +44,17 @@ Communication espCommunication(SerialESP);
 // Sensor declarations
 PT100Sensor waterTempSensor(22, 23, 24, 25, "waterTempSensor");  // Water temperature sensor (CS: 22, DI: 23, DO: 24, CLK: 25)
 DS18B20TemperatureSensor airTempSensor(52, "airTempSensor");     // Air temperature sensor (Data: 52)
+DS18B20TemperatureSensor electronicTempSensor(29, "electronicTempSensor");     // Electronic temperature sensor (Data: 29)
 PHSensor phSensor(A1, &waterTempSensor, "phSensor");             // pH sensor (Analog: A1, uses water temp for compensation)
-TurbiditySensor turbiditySensor(A2, "turbiditySensor");          // Turbidity sensor (Analog: A2)
+//TurbiditySensor turbiditySensor(A2, "turbiditySensor");          // Turbidity sensor (Analog: A2)
 OxygenSensor oxygenSensor(A3, &waterTempSensor, "oxygenSensor"); // Dissolved oxygen sensor (Analog: A3, uses water temp)
 AirFlowSensor airFlowSensor(26, "airFlowSensor");                // Air flow sensor (Digital: 26)
-TurbiditySensorSEN0554 turbiditySensorSEN0554(28, 29, "turbiditySensorSEN0554"); // SEN0554 turbidity sensor (RX: 28, TX: 29)
+TurbiditySensorSEN0554 turbiditySensorSEN0554(A14, A15, "turbiditySensorSEN0554"); // SEN0554 turbidity sensor (RX: Blue, TX: green) 
 
 // Actuator declarations
 DCPump airPump(5, 6, 10, "airPump");        // Air pump (PWM: 5, Relay: 6, Min PWM: 10)
-DCPump drainPump(3, 4, 15, "drainPump");    // Drain pump (PWM: 3, Relay: 4, Min PWM: 15)
-DCPump samplePump(11, 29, 15, "samplePump");// Sample pump (PWM: 11, Relay: 29, Min PWM: 15)
+DCPump drainPump(4, 30, 15, "drainPump");    // Drain pump (PWM: 4, Relay: 29, Min PWM: 15)
+DCPump samplePump(3, 28, 15, "samplePump");// Sample pump (PWM: 3, Relay: 28, Min PWM: 15)
 PeristalticPump nutrientPump(0x61, 7, 1, 105.0, "nutrientPump"); // Nutrient pump (I2C: 0x61, Relay: 7, Min flow: 1, Max flow: 105.0)
 PeristalticPump basePump(0x60, 8, 1, 105.0, "basePump");         // Base pump (I2C: 0x60, Relay: 8, Min flow: 1, Max flow: 105.0)
 StirringMotor stirringMotor(9, 10, 390, 1000,"stirringMotor");   // Stirring motor (PWM: 9, Relay: 10, Min RPM: 390, Max RPM: 1000)
@@ -76,7 +77,7 @@ FermentationProgram fermentationProgram(pidManager, volumeManager);
 CommandHandler commandHandler(stateMachine, safetySystem, volumeManager, logger, pidManager);
 
 unsigned long previousMillis = 0;
-const long interval = 30000; // Interval for logging (30 seconds)
+const long interval = 10000; // Interval for logging (30 seconds)
 
 void setup() {
     Serial.begin(115200);  // Initialize serial communication for debugging
@@ -85,8 +86,11 @@ void setup() {
     Logger::log(LogLevel::INFO, "Setup started");
 
     // Initialize sensors
-    SensorController::initialize(waterTempSensor, airTempSensor, phSensor,
-                                 turbiditySensor, oxygenSensor, airFlowSensor, turbiditySensorSEN0554);
+    SensorController::initialize(waterTempSensor, airTempSensor, electronicTempSensor,
+                                 phSensor,
+                                 oxygenSensor, 
+                                 airFlowSensor, 
+                                 turbiditySensorSEN0554);
     SensorController::beginAll();
 
     // Initialize actuators

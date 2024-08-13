@@ -19,6 +19,7 @@ public:
 private:
     void checkWaterTemperature();
     void checkAirTemperature();
+    void checkElectronicTemperature();
     void checkPH();
     void checkDissolvedOxygen();
     void checkVolume();
@@ -42,11 +43,12 @@ private:
     static constexpr float MAX_WATER_TEMP = 45.0;
     static constexpr float CRITICAL_WATER_TEMP = 50.0;
     static constexpr float MIN_AIR_TEMP = 10.0;
-    static constexpr float MAX_AIR_TEMP = 40.0;
-    static constexpr float MIN_PH = 5.0;
-    static constexpr float MAX_PH = 9.0;
+    static constexpr float MAX_AIR_TEMP = 45.0;
+    static constexpr float MAX_ELECTRONIC_TEMP = 60.0;
+    static constexpr float MIN_PH = 2.0;
+    static constexpr float MAX_PH = 12.0;
     static constexpr float CRITICAL_PH = 10.0;
-    static constexpr float MIN_DO = 20.0;
+    static constexpr float MIN_DO = 0.0;
     static constexpr float MAX_TURBIDITY = 1000.0; // Example value, adjust as needed
 };
 
