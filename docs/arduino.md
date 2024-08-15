@@ -1,3 +1,28 @@
+## System Architecture Diagram
+
+The following diagram illustrates the overall architecture of the bioreactor control system implemented on Arduino, showing the relationships between different components:
+
+![Bioreactor System Architecture](diagram_arduino.png)
+
+*Figure 1: Detailed class diagram of the Arduino-based bioreactor control system, showing major components and their interactions.*
+
+This diagram provides a comprehensive view of the system's structure, including:
+- The central role of the StateMachine in coordinating various programs and components
+- The relationship between sensors and actuators through their respective controllers and interfaces
+- The integration of safety, volume management, and PID control systems
+- The hierarchy of different programs derived from the ProgramBase class
+
+Key components:
+1. **StateMachine**: Manages the overall state of the bioreactor and coordinates program execution.
+2. **SensorController** and **ActuatorController**: Manage various sensors and actuators through standardized interfaces.
+3. **PIDManager**: Implements PID control for temperature, pH, and dissolved oxygen.
+4. **VolumeManager**: Tracks and manages liquid volume in the bioreactor.
+5. **SafetySystem**: Monitors critical parameters and triggers alerts or emergency stops.
+6. **Logger**: Handles system-wide logging for debugging and data collection.
+7. **CommandHandler**: Processes user commands and interacts with other system components.
+
+The color coding and interface notations help distinguish between different types of classes and their roles within the system. This architecture allows for modular development, easy extension of functionality, and clear separation of concerns in the bioreactor control system.
+
 ## Programming Strategies
 
 ### Object-Oriented Design
@@ -192,15 +217,6 @@ The system allows for various configuration and calibration procedures:
 
 ### Safety Threshold Configuration
 - Dynamic setting of safety limits for temperature, pH, volume, etc.
-
-## Future Enhancements
-
-Potential areas for future development include:
-
-1. Integration with a graphical user interface for easier control and monitoring.
-2. Implementation of machine learning algorithms for process optimization.
-3. Expansion of communication capabilities for remote operation and data analysis.
-4. Addition of more sophisticated fermentation strategies and programs.
 
 ## Conclusion
 
