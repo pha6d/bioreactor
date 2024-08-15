@@ -74,6 +74,7 @@ void Logger::logData(const String& currentProgram, const String& programStatus) 
     Serial.println(output);
 }
 
+// void Logger::logProgramEvent
 void Logger::logStartupParameters(const String& programType, int rateOrSpeed, int duration,
     float tempSetpoint, float phSetpoint, float doSetpoint, float nutrientConc,
     float baseConc, const String& experimentName, const String& comment) {
