@@ -151,7 +151,12 @@ void PIDManager::switchToMaintainMode() {
 */
 
 void PIDManager::adjustPIDStirringSpeed() {
-    if (!tempPIDRunning && !phPIDRunning && !doPIDRunning) return;
+    if (!tempPIDRunning && !phPIDRunning && !doPIDRunning) {
+        // If no PID is active, use minimum speed
+        int minSpeed = getMinStirringSpeed();
+        ActuatorController::runActuator("stirringMotor", minSpeed, 0);
+        return;
+    }
 
     double maxOutput = max(max(abs(tempOutput), abs(phOutput)), abs(doOutput));
     int pidSpeed = map(maxOutput, 0, 100, ActuatorController::getStirringMotorMinRPM(), ActuatorController::getStirringMotorMaxRPM());

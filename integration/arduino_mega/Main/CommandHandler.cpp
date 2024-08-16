@@ -114,12 +114,12 @@ void CommandHandler::printHelp() {
     Serial.println("mix <speed> - Start mixing");
     Serial.println("fermentation <temp> <ph> <do> <nutrient_conc> <base_conc> <duration> <experiment_name> <comment> - Start fermentation");
     Serial.println("test pid <type> <setpoint> - Start PID control (type: temp, ph, or do)");
-    Serial.println("adjust_volume <source> <amount> - Manually adjust volume");
     Serial.println("alarm false - Disable safety alarms");
     Serial.println("alarm true - Enable safety alarms");
     Serial.println("warning false - Disable safety warnings");
     Serial.println("warning true - Enable safety warnings");
     Serial.println("set_check_interval <seconds> - Set safety check interval");
+    Serial.println("adjust_volume <source> <amount> - Manually adjust volume (source: NaOH, Nutrient, Microalgae, Removed; amount in liter");
     Serial.println("set_initial_volume <volume> - Set the initial culture volume (in liters)");
     Serial.println("ph ENTERPH - Enter pH calibration mode");
     Serial.println("ph CALPH - Calibrate with buffer solution");

@@ -22,6 +22,7 @@ public:
     float getRemovedVolume() const { return removedVolume; }
     
     float getTotalVolume() const { return totalVolume; }
+    float getMinVolume() const { return minVolume; }
     float getMaxAllowedVolume() const { return totalVolume * maxVolumePercent; }
     bool isSafeToAddVolume(float volume) const;
 

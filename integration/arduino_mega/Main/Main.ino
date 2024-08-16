@@ -64,7 +64,7 @@ LEDGrowLight ledGrowLight(27, "ledGrowLight");                   // LED grow lig
 // System components
 Logger logger;
 PIDManager pidManager;
-VolumeManager volumeManager(1.0, 0.95, 0.1);
+VolumeManager volumeManager(0.6, 0.95, 0.1);
 SafetySystem safetySystem(1.0, 0.95, 0.1);
 StateMachine stateMachine(logger, pidManager, volumeManager);
 
@@ -77,7 +77,7 @@ FermentationProgram fermentationProgram(pidManager, volumeManager);
 CommandHandler commandHandler(stateMachine, safetySystem, volumeManager, logger, pidManager);
 
 unsigned long previousMillis = 0;
-const long interval = 10000; // Interval for logging (30 seconds)
+const long interval = 30000; // Interval for logging (30 seconds)
 
 void setup() {
     Serial.begin(115200);  // Initialize serial communication for debugging
@@ -111,6 +111,9 @@ void setup() {
     pidManager.setHysteresis(0.5, 0.05, 1.0);
     Logger::log(LogLevel::INFO, "PID setup");
 
+    volumeManager.setInitialVolume(0.3);           // set an initial volume of 0.2 L
+    //Logger::log(LogLevel::INFO, "Setup an initial volume");
+    
     Logger::log(LogLevel::INFO, "Setup completed");
 }
 
@@ -151,3 +154,5 @@ void loop() {
     // Short pause to avoid excessive CPU usage
     delay(10);
 }
+
+

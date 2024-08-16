@@ -4,11 +4,12 @@
 
 VolumeManager::VolumeManager(float totalVolume, float maxVolumePercent, float minVolume)
     : totalVolume(totalVolume), maxVolumePercent(maxVolumePercent), minVolume(minVolume),
-      currentVolume(minVolume), addedNaOH(0), addedNutrient(0), addedMicroalgae(0), removedVolume(0) {}
+      currentVolume(0), addedNaOH(0), addedNutrient(0), addedMicroalgae(0), removedVolume(0) {}
 
 void VolumeManager::updateVolume() {
     updateVolumeFromActuators();
-    currentVolume += (addedNaOH + addedNutrient + addedMicroalgae - removedVolume);
+    float volumeChange = addedNaOH + addedNutrient + addedMicroalgae - removedVolume;
+    currentVolume += volumeChange;
     currentVolume = max(minVolume, min(currentVolume, totalVolume * maxVolumePercent));
 
     addedNaOH = 0;
@@ -33,6 +34,9 @@ void VolumeManager::setInitialVolume(float volume) {
         addedMicroalgae = 0;
         removedVolume = 0;
         Logger::log(LogLevel::INFO, "Initial volume set to: " + String(volume) + " L");
+    } else {
+    Logger::log(LogLevel::WARNING, "Invalid initial volume: " + String(volume) + " L. Must be between " + 
+        String(minVolume) + " L and " + String(totalVolume * maxVolumePercent) + " L. Volume not changed.");
     }
 }
 
@@ -66,5 +70,5 @@ void VolumeManager::updateVolumeFromActuators() {
 }
 
 bool VolumeManager::isSafeToAddVolume(float volume) const {
-    return (currentVolume + volume) <= getMaxAllowedVolume();
+    return (currentVolume + volume) <= (totalVolume * maxVolumePercent);
 }
