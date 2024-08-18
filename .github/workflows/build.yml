@@ -47,5 +47,5 @@ jobs:
       - name: Compile Arduino Sketch
         run: |
           mkdir ./build_dir
-          arduino-cli compile --fqbn arduino:avr:mega --output-dir ./build_dir ./integration/arduino_mega/Main/Main.ino
+          arduino-cli compile --library ./integration/arduino_mega/Main/src --fqbn arduino:avr:mega --output-dir ./build_dir ./integration/arduino_mega/Main/Main.ino
         shell: bash
