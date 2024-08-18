@@ -1,13 +1,8 @@
 #ifndef SENSOR_CONTROLLER_H
 #define SENSOR_CONTROLLER_H
 
+#include <sensors.h>
 #include <Arduino.h>
-#include "PT100Sensor.h"
-#include "DS18B20TemperatureSensor.h"
-#include "PHSensor.h"
-#include "OxygenSensor.h"
-#include "AirFlowSensor.h"
-#include "TurbiditySensorSEN0554.h"
 
 class SensorController {
 public:
