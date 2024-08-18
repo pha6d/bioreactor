@@ -3,12 +3,11 @@
 #define ACTUATOR_CONTROLLER_H
 
 #include <Arduino.h>
-#include "DCPump.h"
-#include "PeristalticPump.h"
-#include "StirringMotor.h"
-#include "HeatingPlate.h"
-#include "LEDGrowLight.h"
-#include "ActuatorController.h"
+#include "actuators/DCPump.h"
+#include "actuators/PeristalticPump.h"
+#include "actuators/StirringMotor.h"
+#include "actuators/HeatingPlate.h"
+#include "actuators/LEDGrowLight.h"
 
 enum class ControlMode {
     PWM,
