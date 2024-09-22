@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/**"
       - "integration/arduino_mega/**"
+  workflow_dispatch:
 
 jobs:
   compile:
