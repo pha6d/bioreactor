@@ -1,8 +1,5 @@
 // PIDManager.cpp
 #include "PIDManager.h"
-#include "Logger.h"
-#include <Arduino.h>
-#include "ActuatorController.h"
 
 PIDManager::PIDManager()
     : tempPID(&tempInput, &tempOutput, &tempSetpoint, 0, 0, 0, DIRECT),

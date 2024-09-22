@@ -1,6 +1,8 @@
 #ifndef VOLUME_MANAGER_H
 #define VOLUME_MANAGER_H
 
+#include "ActuatorController.h"
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class VolumeManager {

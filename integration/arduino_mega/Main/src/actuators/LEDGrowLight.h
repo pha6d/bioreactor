@@ -14,6 +14,7 @@
 #define LEDGROWLIGHT_H
 
 #include "ActuatorInterface.h"
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class LEDGrowLight : public ActuatorInterface {

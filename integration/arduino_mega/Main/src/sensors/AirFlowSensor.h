@@ -31,6 +31,7 @@
 #define AIRFLOWSENSOR_H
 
 #include "SensorInterface.h"
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class AirFlowSensor : public SensorInterface {

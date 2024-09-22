@@ -5,8 +5,6 @@
  */
 
 #include "HeatingPlate.h"
-#include "Logger.h"
-#include <Arduino.h>
 
 /*
 HeatingPlate::HeatingPlate(int controlPin, ActuatorController::ControlMode mode, const char* name)
@@ -77,7 +75,6 @@ void HeatingPlate::setCycleTime(unsigned long newCycleTime) {
 */
 
 #include "HeatingPlate.h"
-#include "Logger.h"
 
 HeatingPlate::HeatingPlate(int relayPin, bool isPWMCapable, const char* name)
     : _relayPin(relayPin), _name(name), _status(false), _isPWMCapable(isPWMCapable) {

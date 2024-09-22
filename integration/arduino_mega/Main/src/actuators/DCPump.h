@@ -15,6 +15,7 @@
 #define DCPUMP_H
 
 #include "ActuatorInterface.h"
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class DCPump : public ActuatorInterface {

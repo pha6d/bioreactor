@@ -1,6 +1,5 @@
 #include "FermentationProgram.h"
 #include <Arduino.h>
-#include "Logger.h"
 
 FermentationProgram::FermentationProgram(PIDManager& pidManager, VolumeManager& volumeManager)
     : ProgramBase(),

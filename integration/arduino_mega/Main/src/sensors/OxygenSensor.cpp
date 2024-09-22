@@ -5,7 +5,6 @@
  */
 
 #include "OxygenSensor.h"
-#include "Logger.h"
 
 const uint16_t OxygenSensor::DO_Table[41] = {
     14460, 14220, 13820, 13440, 13090, 12740, 12420, 12110, 11810, 11530,

@@ -1,6 +1,4 @@
 #include "VolumeManager.h"
-#include "ActuatorController.h"
-#include "Logger.h"
 
 VolumeManager::VolumeManager(float totalVolume, float maxVolumePercent, float minVolume)
     : totalVolume(totalVolume), maxVolumePercent(maxVolumePercent), minVolume(minVolume),

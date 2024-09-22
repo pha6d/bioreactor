@@ -4,7 +4,7 @@
 
 #include <Arduino.h>
 #include "ProgramBase.h"
-#include "Logger.h"
+#include <logger/Logger.h>
 #include "PIDManager.h"
 #include "VolumeManager.h"
 #include "SimpleMap.h"

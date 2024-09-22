@@ -3,6 +3,7 @@
 
 #include <sensors.h>
 #include <Arduino.h>
+#include <logger/Logger.h>
 
 class SensorController {
 public:
@@ -17,6 +18,7 @@ public:
     static void beginAll();
     
     static SensorInterface* findSensorByName(const String& name);
+    static void logSensorData();
 
 private:
     static PT100Sensor* waterTempSensor;
@@ -26,7 +28,6 @@ private:
     static OxygenSensor* oxygenSensor;
     static AirFlowSensor* airFlowSensor;
     static TurbiditySensorSEN0554* turbiditySensorSEN0554;
-
     
 };
 

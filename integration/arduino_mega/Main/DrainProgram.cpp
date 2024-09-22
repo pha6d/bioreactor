@@ -1,7 +1,6 @@
 // DrainProgram.cpp
 #include "DrainProgram.h"
 #include <Arduino.h>
-#include "Logger.h"
 
 DrainProgram::DrainProgram() : rate(0), duration(0), startTime(0) {}
 

@@ -5,7 +5,6 @@
  */
 
 #include "PT100Sensor.h"
-#include "Logger.h"
 
 // Constructor for PT100Sensor
 PT100Sensor::PT100Sensor(int csPin, int diPin, int doPin, int clkPin, const char* name)

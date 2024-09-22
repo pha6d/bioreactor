@@ -59,6 +59,7 @@ ATTENTION : After completing the measurement, disconnect the pH probe from the s
 #include "SensorInterface.h"
 #include "DFRobot_PH.h"
 #include <EEPROM.h>
+#include <logger/Logger.h>
 #include <Arduino.h>
 #include "PT100Sensor.h" // Include PT100Sensor for temperature compensation
 

@@ -5,7 +5,6 @@
  */
 
 #include "DS18B20TemperatureSensor.h"
-#include "Logger.h"
 
 // Constructor for DS18B20TemperatureSensor
 DS18B20TemperatureSensor::DS18B20TemperatureSensor(int pin, const char* name) : _ds(pin), _pin(pin), _name(name) {}

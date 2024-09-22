@@ -3,9 +3,9 @@
 #define SAFETY_SYSTEM_H
 
 #include <Arduino.h>
-#include "Logger.h"
 #include "SensorController.h"
 #include "ActuatorController.h"
+#include <logger/Logger.h>
 
 class SafetySystem {
 public:

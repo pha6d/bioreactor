@@ -1,4 +1,4 @@
-#include "Logger.h"
+#include "SensorController.h"
 
 // Static pointers, initialized to nullptr
 PT100Sensor* SensorController::waterTempSensor = nullptr;
@@ -65,4 +65,14 @@ SensorInterface* SensorController::findSensorByName(const String& name) {
     if (name == airFlowSensor->getName()) return airFlowSensor;
     if (name == turbiditySensorSEN0554->getName()) return turbiditySensorSEN0554;
     return nullptr;
+}
+
+static void SensorController::logSensorData() {
+    Logger::log(LogLevel::INFO, "Water Temperature: " + String(SensorController::readSensor("waterTempSensor")) + " °C");
+    Logger::log(LogLevel::INFO, "Air Temperature: " + String(SensorController::readSensor("airTempSensor")) + " °C");
+    Logger::log(LogLevel::INFO, "Electronic Temperature: " + String(SensorController::readSensor("electronicTempSensor")) + " °C");
+    Logger::log(LogLevel::INFO, "pH: " + String(SensorController::readSensor("phSensor")));
+    Logger::log(LogLevel::INFO, "Turbidity: " + String(SensorController::readSensor("turbiditySensorSEN0554")) + " voltage");
+    Logger::log(LogLevel::INFO, "Dissolved Oxygen: " + String(SensorController::readSensor("oxygenSensor")) + " mg/L");
+    Logger::log(LogLevel::INFO, "Air Flow: " + String(SensorController::readSensor("airFlowSensor")) + " L/min");
 }

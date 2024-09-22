@@ -20,13 +20,13 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
+#include <logger.h>
 
 #include "SensorController.h"
 #include "ActuatorController.h"
 #include "StateMachine.h"
 #include "VolumeManager.h"
 #include "SafetySystem.h"
-#include "Logger.h"
 #include "PIDManager.h"
 #include "CommandHandler.h"
 #include "Communication.h"
@@ -148,7 +148,25 @@ void loop() {
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
-        logger.logData(stateMachine.getCurrentProgram(), String(static_cast<int>(stateMachine.getCurrentState())));
+        logger.logData(
+            stateMachine.getCurrentProgram(), 
+            String(static_cast<int>(stateMachine.getCurrentState())),
+            SensorController::readSensor("waterTempSensor"),
+            SensorController::readSensor("airTempSensor"),
+            SensorController::readSensor("electronicTempSensor"),
+            SensorController::readSensor("phSensor"),
+            SensorController::readSensor("turbiditySensorSEN0554"),
+            SensorController::readSensor("oxygenSensor"),
+            SensorController::readSensor("airFlowSensor"),
+            ActuatorController::isActuatorRunning("airPump"),
+            ActuatorController::isActuatorRunning("drainPump"),
+            ActuatorController::isActuatorRunning("samplePump"),
+            ActuatorController::isActuatorRunning("nutrientPump"),
+            ActuatorController::isActuatorRunning("basePump"),
+            ActuatorController::isActuatorRunning("stirringMotor"),
+            ActuatorController::isActuatorRunning("heatingPlate"),
+            ActuatorController::isActuatorRunning("ledGrowLight")
+        );
     }
 
     // Short pause to avoid excessive CPU usage

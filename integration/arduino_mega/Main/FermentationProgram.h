@@ -6,7 +6,7 @@
 #include "VolumeManager.h"
 #include "ActuatorController.h"
 #include "SensorController.h"
-#include "Logger.h"
+#include <logger/Logger.h>
 
 class FermentationProgram : public ProgramBase {
 public:

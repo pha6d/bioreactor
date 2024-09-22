@@ -2,6 +2,7 @@
 #define ERROR_HANDLER_H
 
 #include <Arduino.h>
+#include <logger/Logger.h>
 
 class ErrorHandler {
 public:

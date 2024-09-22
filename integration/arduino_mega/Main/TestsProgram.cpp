@@ -205,7 +205,7 @@ void TestsProgram::updateAllActuatorsTest() {
 
 void TestsProgram::runSensorsTest() {
     Logger::log(LogLevel::INFO, "Started sensors test");
-    Logger::logSensorData();
+    SensorController::logSensorData();
 }
 
 void TestsProgram::runPIDTest() {
@@ -234,7 +234,7 @@ void TestsProgram::updateContinuousTest() {
     switch (_currentTestType) {
         case TestType::SENSORS:
             if (currentTime - lastSensorLogTime >= sensorLogInterval) {
-                Logger::logSensorData();
+                SensorController::logSensorData();
                 lastSensorLogTime = currentTime;
             }
             break;

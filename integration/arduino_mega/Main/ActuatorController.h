@@ -3,6 +3,7 @@
 #define ACTUATOR_CONTROLLER_H
 
 #include <actuators.h>
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 enum class ControlMode {
@@ -41,6 +42,8 @@ public:
 
     static ActuatorInterface* findActuatorByName(const String& name);
     static void runHeatingPlatePID(double pidOutput);
+
+    static void logActuatorData();
 
 private:
     static DCPump* airPump;

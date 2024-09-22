@@ -6,6 +6,7 @@
 #include "ActuatorController.h"
 #include "SensorController.h"
 #include "VolumeManager.h"
+#include <logger/Logger.h>
 
 class PIDManager {
 public:

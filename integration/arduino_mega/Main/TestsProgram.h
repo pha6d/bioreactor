@@ -6,7 +6,7 @@
 #include "ActuatorController.h"
 #include "SensorController.h"
 #include "PIDManager.h"
-#include "Logger.h"
+#include <logger/Logger.h>
 
 class TestsProgram : public ProgramBase {
 public:

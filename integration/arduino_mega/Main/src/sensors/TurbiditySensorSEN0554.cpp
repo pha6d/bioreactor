@@ -7,7 +7,6 @@
  */
 
 #include "TurbiditySensorSEN0554.h"
-#include "Logger.h"
 
 TurbiditySensorSEN0554::TurbiditySensorSEN0554(int rxPin, int txPin, const char* name)
     : _serial(rxPin, txPin), _name(name) {}

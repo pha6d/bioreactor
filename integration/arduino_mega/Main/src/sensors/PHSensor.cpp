@@ -5,7 +5,6 @@
  */
 
 #include "PHSensor.h"
-#include "Logger.h"
 
 // Constructor for PHSensor
 PHSensor::PHSensor(int pin, PT100Sensor* tempSensor, const char* name) 

@@ -5,7 +5,6 @@
  */
 
 #include "StirringMotor.h"
-#include "Logger.h"
 
 // Constructor for StirringMotor
 StirringMotor::StirringMotor(int pwmPin, int relayPin, int minRPM, int maxRPM, const char* name)

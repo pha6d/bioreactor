@@ -8,6 +8,7 @@
 #define HEATINGPLATE_H
 
 #include "ActuatorInterface.h"
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 

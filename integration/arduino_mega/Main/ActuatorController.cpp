@@ -1,6 +1,5 @@
 // ActuatorController.cpp
 #include "ActuatorController.h"
-#include "Logger.h"
 
 // Static pointers, initialized to nullptr
 DCPump* ActuatorController::airPump = nullptr;
@@ -162,4 +161,13 @@ float ActuatorController::getTotalVolumeRemoved() {
     return getVolumeRemoved("drainPump");
 }
 
-
+void ActuatorController::logActuatorData() {
+    Logger::log(LogLevel::INFO, "Air Pump: " + String(ActuatorController::isActuatorRunning("airPump") ? "ON" : "OFF"));
+    Logger::log(LogLevel::INFO, "Drain Pump: " + String(ActuatorController::isActuatorRunning("drainPump") ? "ON" : "OFF"));
+    Logger::log(LogLevel::INFO, "Sample Pump: " + String(ActuatorController::isActuatorRunning("samplePump") ? "ON" : "OFF"));
+    Logger::log(LogLevel::INFO, "Nutrient Pump: " + String(ActuatorController::isActuatorRunning("nutrientPump") ? "ON" : "OFF"));
+    Logger::log(LogLevel::INFO, "Base Pump: " + String(ActuatorController::isActuatorRunning("basePump") ? "ON" : "OFF"));
+    Logger::log(LogLevel::INFO, "Stirring Motor: " + String(ActuatorController::isActuatorRunning("stirringMotor") ? "ON" : "OFF"));
+    Logger::log(LogLevel::INFO, "Heating Plate: " + String(ActuatorController::isActuatorRunning("heatingPlate") ? "ON" : "OFF"));
+    Logger::log(LogLevel::INFO, "LED Grow Light: " + String(ActuatorController::isActuatorRunning("ledGrowLight") ? "ON" : "OFF"));
+}

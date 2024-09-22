@@ -50,6 +50,7 @@
 #define PT100SENSOR_H
 
 #include "SensorInterface.h"
+#include <logger/Logger.h>
 #include <Adafruit_MAX31865.h>
 
 class PT100Sensor : public SensorInterface {

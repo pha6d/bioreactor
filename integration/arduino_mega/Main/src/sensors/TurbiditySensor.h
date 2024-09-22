@@ -20,6 +20,7 @@ For the Gravity: Analog Turbidity Sensor
 #define TURBIDITYSENSOR_H
 
 #include "SensorInterface.h"
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class TurbiditySensor : public SensorInterface {

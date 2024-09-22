@@ -4,7 +4,7 @@
 
 #include "ProgramBase.h"
 #include "ActuatorController.h"
-#include "Logger.h"
+#include <logger/Logger.h>
 
 class DrainProgram : public ProgramBase {
 public:

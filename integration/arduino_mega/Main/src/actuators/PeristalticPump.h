@@ -17,6 +17,7 @@
 
 #include "ActuatorInterface.h"
 #include <Adafruit_MCP4725.h>
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class PeristalticPump : public ActuatorInterface {

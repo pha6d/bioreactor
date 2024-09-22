@@ -5,7 +5,7 @@
 #include "StateMachine.h"
 #include "SafetySystem.h"
 #include "VolumeManager.h"
-#include "Logger.h"
+#include <logger/Logger.h>
 #include "PIDManager.h"
 
 class CommandHandler {

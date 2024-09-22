@@ -5,7 +5,6 @@
  */
 
 #include "AirFlowSensor.h"
-#include "Logger.h"
 
 const float AirFlowSensor::_pulsesPerLiter = 5880.0; // Pulses per liter as per the sensor's specification
 AirFlowSensor* AirFlowSensor::instance = nullptr; // Initialize the static instance

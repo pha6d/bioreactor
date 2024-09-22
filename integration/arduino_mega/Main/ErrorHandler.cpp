@@ -1,5 +1,4 @@
 #include "ErrorHandler.h"
-#include "Logger.h"
 
 void ErrorHandler::handleError(const String& errorMessage) {
     Logger::log(LogLevel::ERROR, "ERROR: " + errorMessage);

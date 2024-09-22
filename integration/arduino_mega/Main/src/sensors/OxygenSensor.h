@@ -35,6 +35,7 @@ For Gravity: Analog Dissolved Oxygen Sensor / Meter Kit for Arduino
 
 #include "SensorInterface.h"
 #include "PT100Sensor.h" // Include PT100Sensor for temperature compensation
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class OxygenSensor : public SensorInterface {

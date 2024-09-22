@@ -2,8 +2,6 @@
 #include "Logger.h"
 #include <ArduinoJson.h>
 
-#include "SensorController.h"
-#include "ActuatorController.h"
 
 LogLevel Logger::currentLevel = LogLevel::INFO;
 
@@ -20,6 +18,55 @@ void Logger::log(LogLevel level, const String& message) {
     }
 }
 
+static void Logger::logData(const String& currentProgram, 
+                     const String& programStatus,
+                     float wTemp, float aTemp, float eTemp, float pH, float turb, float oxy, float aflow,
+                     bool apStat, bool dpStat, bool spStat, bool npStat, bool bpStat, bool smStat, bool hpStat, bool lgStat) {
+
+    // Debug logs for sensor values
+    log(LogLevel::DEBUG, "Water Temp: " + String(wTemp));
+    log(LogLevel::DEBUG, "Air Temp: " + String(aTemp));
+    log(LogLevel::DEBUG, "Electronic Temp: " + String(eTemp));
+    log(LogLevel::DEBUG, "pH: " + String(pH));
+    log(LogLevel::DEBUG, "Turbidity: " + String(turb));
+    log(LogLevel::DEBUG, "Oxygen: " + String(oxy));
+    log(LogLevel::DEBUG, "Air Flow: " + String(aflow));
+
+    // Create a JSON document with a fixed size
+    StaticJsonDocument<256> doc;
+
+    // Add program info to JSON
+    doc["program"] = currentProgram;
+    doc["status"] = programStatus;
+
+    // Add actuator statuses to JSON
+    doc["airP"] = apStat ? 1 : 0;
+    doc["drainP"] = dpStat ? 1 : 0;
+    doc["sampleP"] = spStat ? 1 : 0;
+    doc["nutrientP"] = npStat ? 1 : 0;
+    doc["baseP"] = bpStat ? 1 : 0;
+    doc["stirringM"] = smStat ? 1 : 0;
+    doc["heatingP"] = hpStat ? 1 : 0;
+    doc["led"] = lgStat ? 1 : 0;
+
+    // Add sensor values to JSON
+    doc["waterTemp"] = wTemp;
+    doc["airTemp"] = aTemp;
+    doc["elecTemp"] = eTemp;
+    doc["pH"] = pH;
+    doc["turbidity"] = turb;
+    doc["oxygen"] = oxy;
+    doc["airFlow"] = aflow;
+
+    // Serialize JSON document to string
+    String output;
+    serializeJson(doc, output);
+
+    // Print JSON string to serial
+    Serial.println(output);
+}
+
+/*
 void Logger::logData(const String& currentProgram, const String& programStatus) {
     // Read sensor values
     float wTemp = SensorController::readSensor("waterTempSensor");
@@ -73,6 +120,7 @@ void Logger::logData(const String& currentProgram, const String& programStatus) 
     // Print JSON string to serial
     Serial.println(output);
 }
+*/
 
 // void Logger::logProgramEvent
 void Logger::logStartupParameters(const String& programType, int rateOrSpeed, int duration,
@@ -114,25 +162,4 @@ void Logger::logPIDData(const String& pidType, float setpoint, float input, floa
 
 void Logger::setLogLevel(LogLevel level) {
     currentLevel = level;
-}
-
-void Logger::logSensorData() {
-    log(LogLevel::INFO, "Water Temperature: " + String(SensorController::readSensor("waterTempSensor")) + " °C");
-    log(LogLevel::INFO, "Air Temperature: " + String(SensorController::readSensor("airTempSensor")) + " °C");
-    log(LogLevel::INFO, "Electronic Temperature: " + String(SensorController::readSensor("electronicTempSensor")) + " °C");
-    log(LogLevel::INFO, "pH: " + String(SensorController::readSensor("phSensor")));
-    log(LogLevel::INFO, "Turbidity: " + String(SensorController::readSensor("turbiditySensorSEN0554")) + " voltage");
-    log(LogLevel::INFO, "Dissolved Oxygen: " + String(SensorController::readSensor("oxygenSensor")) + " mg/L");
-    log(LogLevel::INFO, "Air Flow: " + String(SensorController::readSensor("airFlowSensor")) + " L/min");
-}
-
-void Logger::logActuatorData() {
-    log(LogLevel::INFO, "Air Pump: " + String(ActuatorController::isActuatorRunning("airPump") ? "ON" : "OFF"));
-    log(LogLevel::INFO, "Drain Pump: " + String(ActuatorController::isActuatorRunning("drainPump") ? "ON" : "OFF"));
-    log(LogLevel::INFO, "Sample Pump: " + String(ActuatorController::isActuatorRunning("samplePump") ? "ON" : "OFF"));
-    log(LogLevel::INFO, "Nutrient Pump: " + String(ActuatorController::isActuatorRunning("nutrientPump") ? "ON" : "OFF"));
-    log(LogLevel::INFO, "Base Pump: " + String(ActuatorController::isActuatorRunning("basePump") ? "ON" : "OFF"));
-    log(LogLevel::INFO, "Stirring Motor: " + String(ActuatorController::isActuatorRunning("stirringMotor") ? "ON" : "OFF"));
-    log(LogLevel::INFO, "Heating Plate: " + String(ActuatorController::isActuatorRunning("heatingPlate") ? "ON" : "OFF"));
-    log(LogLevel::INFO, "LED Grow Light: " + String(ActuatorController::isActuatorRunning("ledGrowLight") ? "ON" : "OFF"));
 }

@@ -25,6 +25,7 @@
 
 #include "SensorInterface.h"
 #include <SoftwareSerial.h>
+#include <logger/Logger.h>
 #include <Arduino.h>
 
 class TurbiditySensorSEN0554 : public SensorInterface {

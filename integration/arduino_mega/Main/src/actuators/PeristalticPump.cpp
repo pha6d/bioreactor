@@ -5,7 +5,6 @@
  */
 
 #include "PeristalticPump.h"
-#include "Logger.h"
 
 // Constructor for PeristalticPump
 PeristalticPump::PeristalticPump(uint8_t dacAddress, int relayPin, float minFlowRate, float maxFlowRate, const char* name)

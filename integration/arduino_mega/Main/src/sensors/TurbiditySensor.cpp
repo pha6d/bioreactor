@@ -5,7 +5,6 @@
  */
 
 #include "TurbiditySensor.h"
-#include "Logger.h"
 
 // Constructor for TurbiditySensor
 TurbiditySensor::TurbiditySensor(int pin, const char* name) : _pin(pin), _name(name) {}

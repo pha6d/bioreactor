@@ -6,7 +6,6 @@
  */
 
 #include "DCPump.h"
-#include "Logger.h"
 
 // Constructor for DCPump
 DCPump::DCPump(int pwmPin, int relayPin, int minPWM, const char* name)

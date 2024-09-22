@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <logger/Logger.h>
 
 class Communication {
 public:

@@ -5,7 +5,6 @@
  */
 
 #include "LEDGrowLight.h"
-#include "Logger.h"
 
 // Constructor for LEDGrowLight
 LEDGrowLight::LEDGrowLight(int relayPin, const char* name)
